@@ -28,10 +28,12 @@ States shown to the page: idle, connecting, listening, thinking, speaking.
   the conversation was doing. The volume keys then change only that ring's volume.
 """
 import asyncio
+import hashlib
 import io
 import json
 import logging
 import os
+import re
 import socket
 import time
 import urllib.parse
@@ -128,6 +130,16 @@ def overlay(base, extra, at):
     return np.clip(out, -1, 1)
 
 
+WAKE_REPLY = '在'
+WAKE_CACHE = Path.home() / '.local' / 'share' / 'thinksmart-client' / 'wake-audio'
+
+
+def wake_file(voice, text):
+    if not re.fullmatch(r'[0-9a-f]{64}', voice):
+        raise ValueError('invalid wake voice key')
+    return WAKE_CACHE / voice / (hashlib.sha256(text.encode()).hexdigest() + '.wav')
+
+
 ZAI_AT = 0.15   # seconds into the wake chime: just after its second note (0.09 s)
 C5, E5, G5, A5, B5, C6, D6, E6 = 523.25, 659.25, 783.99, 880.0, 987.77, 1046.5, 1174.66, 1318.5
 
@@ -211,10 +223,21 @@ class Client:
         self.sounds = {'wake': marimba([G5, D6], 0.09), 'bye': marimba([D6, G5], 0.12, 0.16),
                        'miss': marimba([E6, C6], 0.12, 0.16), 'error': marimba([A5, E5, C5], 0.14),
                        'report': marimba([G5, B5, D6], 0.08)}
-        if (sounds / 'zai.wav').exists():
-            # the one-character "在" comes in as the second note rings, over its tail: played after
-            # the whole chime it came ~0.4 s later
-            self.sounds['wake'] = overlay(self.sounds['wake'], load_wav(sounds / 'zai.wav'), ZAI_AT)
+        self.wake_chime = self.sounds['wake']
+        self.wake_voice = None
+        current = WAKE_CACHE / 'current'
+        if current.exists():
+            try:
+                voice = current.read_text().strip()
+                reply = load_wav(wake_file(voice, WAKE_REPLY))
+                if len(reply):
+                    self.sounds['wake'] = overlay(self.wake_chime, reply, ZAI_AT)
+                    self.wake_voice = voice
+            except Exception as e:
+                log.warning('cannot restore cached wake reply: %s', e)
+        elif (sounds / 'zai.wav').exists():
+            # Older hubs don't publish the configured voice.
+            self.sounds['wake'] = overlay(self.wake_chime, load_wav(sounds / 'zai.wav'), ZAI_AT)
         self.speech_end = 0.0         # monotonic: last time the user was heard talking
         self.tools_listed = asyncio.Event()   # the hub asked for our device tools on this connection
         self.connecting = asyncio.Lock()      # one connection: a second wake while connecting waits for it
@@ -928,7 +951,7 @@ class Client:
     async def poll_reports(self, play=False):
         try:
             data = await self._hub_http('/kiosk/reports', {'device': self.cfg['device_id'],
-                                                           'quiet': self.sleeping, 'play': play})
+                                                           'quiet': self.sleeping, 'play': play, 'wake_voice': True})
         except Exception:
             return None
         self.hub_seen = time.monotonic()
@@ -966,7 +989,13 @@ class Client:
                 self._apply_sleep()
                 log.info('sleep hours %s', 'begin' if self.sleeping else 'end')
                 self.set_state(self.state)
-            await self.poll_reports()
+            data = await self.poll_reports()
+            voice = (data or {}).get('wake_voice')
+            if voice and voice != self.wake_voice:
+                try:
+                    await self.sync_wake_voice(voice)
+                except Exception as e:
+                    log.warning('cannot prepare wake reply: %s', e)
             await asyncio.sleep(REPORT_POLL)
 
     # ---- volume: the device's (keys, voice, the page) and the alarms' own ----
@@ -1192,10 +1221,36 @@ class Client:
         if self.alarms.set_clip(item['id'], wav):
             self.publish_alarms()
 
-    async def _speech(self, text):
+    async def sync_wake_voice(self, voice):
+        path = wake_file(voice, WAKE_REPLY)
+        # As soon as a change is known, use only the two-note chime until its matching words are ready.
+        self.sounds['wake'] = self.wake_chime
+        self.wake_voice = None
+        try:
+            reply = load_wav(path)
+            if not len(reply):
+                raise ValueError('empty cached wake reply')
+        except Exception:
+            wav = await self._speech(WAKE_REPLY, voice_key=voice)
+            if not wav:
+                return
+            reply = load_wav(io.BytesIO(wav))
+            if not len(reply):
+                raise ValueError('empty wake reply')
+            alarms.write_atomic(path, wav)
+        sound = overlay(self.wake_chime, reply, ZAI_AT)
+        alarms.write_atomic(WAKE_CACHE / 'current', voice.encode())
+        self.sounds['wake'] = sound
+        self.wake_voice = voice
+        log.info('wake reply ready: %s', voice[:12])
+
+    async def _speech(self, text, voice_key=None):
         try:
             async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=TTS_TIMEOUT)) as s:
-                async with s.post(self.cfg['hub_http'] + '/kiosk/tts', json={'text': text}) as r:
+                body = {'text': text}
+                if voice_key:
+                    body['voice_key'] = voice_key
+                async with s.post(self.cfg['hub_http'] + '/kiosk/tts', json=body) as r:
                     if r.status == 200:
                         return await r.read()
                     log.warning('the hub did not synthesise %r: %s %s', text, r.status, await r.text())
