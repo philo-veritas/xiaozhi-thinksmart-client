@@ -2,3 +2,8 @@ __pycache__/
 *.pyc
 .venv/
 .DS_Store
+
+# Impeccable working material: comps, review screenshots, question state (design.json and surfaces/ are kept)
+.impeccable/mocks/
+.impeccable/review/
+.impeccable/questions/

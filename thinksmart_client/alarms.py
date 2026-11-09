@@ -401,7 +401,7 @@ class Alarms:
         return {'id': item['id'], 'kind': item['kind'], 'type': KINDS[item['kind']], 'label': item['label'],
                 'at': t, 'when': describe_when(t, now) if t else '', 'in': describe_in(t, now) if t else '',
                 'repeat': describe_repeat(item['repeat']), 'snoozed': item.get('snooze') is not None,
-                'spoken': item.get('clip')}
+                'spoken': item.get('clip'), 'created': item.get('created')}
 
 
 # ---- ring tones ----

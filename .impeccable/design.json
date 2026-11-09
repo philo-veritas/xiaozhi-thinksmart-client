@@ -1,0 +1,592 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-07T16:03:36Z",
+  "title": "Design System: 小麦设备界面",
+  "extensions": {
+    "colorMeta": {
+      "black": {
+        "role": "neutral",
+        "displayName": "近黑 Black",
+        "canonical": "#111110",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#252524",
+          "#424241",
+          "#616160",
+          "#828281",
+          "#a5a5a4",
+          "#c9c9c8",
+          "#eeeeee"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "纸白 Paper",
+        "canonical": "#f4f3ee",
+        "tonalRamp": [
+          "#0c0b09",
+          "#262521",
+          "#43423e",
+          "#62615d",
+          "#83827e",
+          "#a6a5a0",
+          "#cac9c5",
+          "#efeeed"
+        ]
+      },
+      "yellow": {
+        "role": "primary",
+        "displayName": "信号黄 Yellow",
+        "canonical": "#ffc800",
+        "tonalRamp": [
+          "#130900",
+          "#302300",
+          "#533f00",
+          "#795d00",
+          "#a17d04",
+          "#cb9e01",
+          "#efc34e",
+          "#ffedc2"
+        ]
+      },
+      "cobalt": {
+        "role": "primary",
+        "displayName": "钴蓝 Cobalt",
+        "canonical": "#2340e8",
+        "tonalRamp": [
+          "#020039",
+          "#09007b",
+          "#1509c3",
+          "#2544ec",
+          "#4974ff",
+          "#7ca1ff",
+          "#b2c8fe",
+          "#e7eeff"
+        ]
+      },
+      "wheat": {
+        "role": "primary",
+        "displayName": "麦色 Wheat",
+        "canonical": "#e8983a",
+        "tonalRamp": [
+          "#190600",
+          "#391e00",
+          "#603700",
+          "#8a5200",
+          "#b76f02",
+          "#e09131",
+          "#fcba75",
+          "#ffebd7"
+        ]
+      },
+      "red": {
+        "role": "tertiary",
+        "displayName": "朱红 Red",
+        "canonical": "#f03c14",
+        "tonalRamp": [
+          "#220000",
+          "#4c0300",
+          "#7c1200",
+          "#b12100",
+          "#e93305",
+          "#ff7558",
+          "#feb4a3",
+          "#ffe9e4"
+        ]
+      },
+      "eye-white": {
+        "role": "neutral",
+        "displayName": "眼白 Eye White",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "sleep-speaking": {
+        "role": "primary",
+        "displayName": "睡眠回答色",
+        "canonical": "#c9a000",
+        "tonalRamp": [
+          "#120a00",
+          "#302300",
+          "#524000",
+          "#775e00",
+          "#9f7e02",
+          "#c9a000",
+          "#e7c668",
+          "#fceec8"
+        ]
+      },
+      "on2-black": {
+        "role": "neutral",
+        "displayName": "黑场次要文字",
+        "canonical": "#a9a8a2",
+        "tonalRamp": [
+          "#0c0b08",
+          "#262520",
+          "#43423d",
+          "#62615c",
+          "#83827d",
+          "#a6a59f",
+          "#cac9c4",
+          "#efeeec"
+        ]
+      },
+      "on2-paper": {
+        "role": "neutral",
+        "displayName": "纸白场次要文字",
+        "canonical": "#55544f",
+        "tonalRamp": [
+          "#0c0b08",
+          "#262521",
+          "#43423d",
+          "#62615c",
+          "#83827d",
+          "#a6a59f",
+          "#cac9c4",
+          "#efeeec"
+        ]
+      },
+      "on2-wheat": {
+        "role": "neutral",
+        "displayName": "麦色场次要文字",
+        "canonical": "#3d2706",
+        "tonalRamp": [
+          "#160700",
+          "#352000",
+          "#543d1e",
+          "#755c3d",
+          "#977d5d",
+          "#bba07e",
+          "#dcc5a9",
+          "#f7ede0"
+        ]
+      },
+      "on2-cobalt": {
+        "role": "neutral",
+        "displayName": "钴蓝场次要文字",
+        "canonical": "#d6dcff",
+        "tonalRamp": [
+          "#08091a",
+          "#1f223c",
+          "#3c405c",
+          "#5a5f7d",
+          "#7b80a0",
+          "#9da3c4",
+          "#c2c7e3",
+          "#ebeefa"
+        ]
+      },
+      "on2-yellow": {
+        "role": "neutral",
+        "displayName": "黄场次要文字",
+        "canonical": "#4a3b00",
+        "tonalRamp": [
+          "#120a00",
+          "#2f2400",
+          "#504007",
+          "#70602c",
+          "#92814e",
+          "#b5a46f",
+          "#d6c99e",
+          "#f4eedc"
+        ]
+      },
+      "line-on-black": {
+        "role": "neutral",
+        "displayName": "黑场细线",
+        "canonical": "#ffffff26",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "line-on-paper": {
+        "role": "neutral",
+        "displayName": "纸白场细线",
+        "canonical": "#11111024",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#252524",
+          "#424241",
+          "#616160",
+          "#828281",
+          "#a5a5a4",
+          "#c9c9c8",
+          "#eeeeee"
+        ]
+      },
+      "line-on-bright": {
+        "role": "neutral",
+        "displayName": "麦色和黄场细线",
+        "canonical": "#11111033",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#252524",
+          "#424241",
+          "#616160",
+          "#828281",
+          "#a5a5a4",
+          "#c9c9c8",
+          "#eeeeee"
+        ]
+      },
+      "line-on-cobalt": {
+        "role": "neutral",
+        "displayName": "钴蓝场细线",
+        "canonical": "#ffffff40",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "error-on-paper": {
+        "role": "neutral",
+        "displayName": "纸白页错误文字",
+        "canonical": "#b3260a",
+        "tonalRamp": [
+          "#220000",
+          "#4c0200",
+          "#7d1000",
+          "#b12306",
+          "#d94d33",
+          "#ff755a",
+          "#ffb4a3",
+          "#ffe9e4"
+        ]
+      },
+      "error-on-black": {
+        "role": "neutral",
+        "displayName": "黑页错误文字",
+        "canonical": "#ff9f88",
+        "tonalRamp": [
+          "#220000",
+          "#4b0600",
+          "#74210e",
+          "#994330",
+          "#bf6550",
+          "#e68872",
+          "#feb4a2",
+          "#fee9e4"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "clock-portrait": {
+        "displayName": "竖屏时钟",
+        "purpose": "待机和响铃的巨型时钟，贴左边缘。"
+      },
+      "clock-landscape": {
+        "displayName": "横屏时钟",
+        "purpose": "横屏待机和响铃的巨型时钟。"
+      },
+      "title-solo-portrait": {
+        "displayName": "竖屏独占标题",
+        "purpose": "竖屏还没有消息时的状态大字。"
+      },
+      "title-solo-landscape": {
+        "displayName": "横屏独占标题",
+        "purpose": "横屏还没有消息时的状态大字。"
+      },
+      "title-talk-portrait": {
+        "displayName": "竖屏对话标题",
+        "purpose": "竖屏对话时的状态大字。"
+      },
+      "title-status": {
+        "displayName": "状态标题",
+        "purpose": "待机和横屏对话的状态大字。"
+      },
+      "title-sheet": {
+        "displayName": "页面标题",
+        "purpose": "设置和模型页标题。"
+      },
+      "reply-solo": {
+        "displayName": "单条回答",
+        "purpose": "只有一条消息时的回答，隔着房间可读。"
+      },
+      "reply-portrait": {
+        "displayName": "竖屏回答",
+        "purpose": "竖屏对话中的回答。"
+      },
+      "reply-landscape": {
+        "displayName": "横屏回答",
+        "purpose": "横屏对话中的回答。"
+      },
+      "row-time": {
+        "displayName": "行内时间",
+        "purpose": "闹钟和倒计时行右侧的等宽时间。"
+      },
+      "row-title": {
+        "displayName": "行标题",
+        "purpose": "设置项标题。"
+      },
+      "control-label": {
+        "displayName": "控件文字",
+        "purpose": "主屏胶囊控件。"
+      },
+      "hint": {
+        "displayName": "提示",
+        "purpose": "标题下的一句提示。"
+      },
+      "note": {
+        "displayName": "说明",
+        "purpose": "设置页说明，走近才读。"
+      },
+      "timestamp": {
+        "displayName": "时间戳",
+        "purpose": "消息时间，系统最小字号。"
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "state-wipe",
+        "value": "transform 420ms cubic-bezier(.4, 0, .2, 1)",
+        "purpose": "状态切换：旧颜色的整层向上滑走，等画面跟上变化后才开始。"
+      },
+      {
+        "name": "page-arrive",
+        "value": "opacity, transform 360ms cubic-bezier(.2, .8, .2, 1)",
+        "purpose": "时钟页和对话页互换：新页面从下方 2.5rem 上浮淡入，与色层同一帧开始。"
+      },
+      {
+        "name": "sheet-slide",
+        "value": "transform 320ms cubic-bezier(.2, .8, .2, 1)",
+        "purpose": "设置和模型页从底部滑入。"
+      },
+      {
+        "name": "state-bounce",
+        "value": "transform 340ms ease-out",
+        "purpose": "切换状态时小麦弹一下（.86 到 1.03 到 1）。"
+      },
+      {
+        "name": "eye-turn",
+        "value": "transform 520ms ease-out-cubic，约 30fps",
+        "purpose": "眼睛滑动并收窄；待机张望 760ms，连接扫视 800ms。"
+      },
+      {
+        "name": "press",
+        "value": "transform 120ms",
+        "purpose": "按下时缩小（.93 到 .98）。"
+      },
+      {
+        "name": "message-in",
+        "value": "transform, opacity 240ms ease-out",
+        "purpose": "新消息上移淡入。"
+      },
+      {
+        "name": "toast",
+        "value": "transform, opacity 220ms",
+        "purpose": "提示条出现。"
+      },
+      {
+        "name": "hud",
+        "value": "transform, opacity 180ms",
+        "purpose": "音量浮层和开关圆钮。"
+      },
+      {
+        "name": "breathe",
+        "value": "transform 5s ease-in-out infinite",
+        "purpose": "待机呼吸。"
+      },
+      {
+        "name": "blink",
+        "value": "transform 5.4s infinite",
+        "purpose": "眨眼。"
+      },
+      {
+        "name": "spin-thinking",
+        "value": "transform 7s linear infinite",
+        "purpose": "思考时轮廓慢转，眼睛不转。"
+      },
+      {
+        "name": "spin-connecting",
+        "value": "transform 2.6s cubic-bezier(.6, 0, .3, 1) infinite",
+        "purpose": "连接时轮廓旋转。"
+      },
+      {
+        "name": "ring-shake",
+        "value": "transform 1.2s ease-in-out infinite",
+        "purpose": "响铃时小麦摇晃。"
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "portrait",
+        "value": "orientation: portrait（800×1280）"
+      },
+      {
+        "name": "landscape",
+        "value": "orientation: landscape（1280×800）"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "小麦 待机",
+      "kind": "custom",
+      "description": "纯平实心色块加两只白色斜眼；只有眼睛滑动并在靠边时收窄。",
+      "html": "<div class=\"ds-me\" aria-hidden=\"true\"><svg viewBox=\"0 0 100 100\"><path d=\"M38 7C45 5 52 8 60 12L72 18C87 26 95 41 93 57C91 79 72 95 50 95C27 95 8 77 9 54C9 49 10 45 12 41L23 18C26 12 31 9 38 7Z\"/></svg><span class=\"ds-eye ds-eye-l\"></span><span class=\"ds-eye ds-eye-r\"></span></div>",
+      "css": ".ds-me{position:relative;width:17rem;height:17rem}.ds-me svg{position:absolute;inset:0;width:100%;height:100%;fill:var(--me,#e8983a)}.ds-eye{position:absolute;left:50%;top:50%;width:8.4%;height:21%;margin:-10.5% 0 0 -4.2%;border-radius:99rem;background:#fff}.ds-eye-l{animation:ds-look-l 4s ease-in-out infinite alternate}.ds-eye-r{animation:ds-look-r 4s ease-in-out infinite alternate}@keyframes ds-look-l{from{transform:translate(-40%,-20%) rotate(-20deg) scaleX(.98)}to{transform:translate(90%,-20%) rotate(-20deg) scaleX(1)}}@keyframes ds-look-r{from{transform:translate(120%,-20%) rotate(-20deg) scaleX(1)}to{transform:translate(290%,-20%) rotate(-20deg) scaleX(.55)}}"
+    },
+    {
+      "name": "麦克风按钮",
+      "kind": "button",
+      "refersTo": "mic-button",
+      "description": "主屏主入口，反色实底正圆。",
+      "html": "<button class=\"ds-mic\" aria-label=\"说话\"><svg width=\"42\" height=\"42\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\"><rect x=\"9\" y=\"3\" width=\"6\" height=\"11\" rx=\"3\"/><path d=\"M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21\"/></svg></button>",
+      "css": ".ds-mic{width:6.5rem;height:6.5rem;border:0;border-radius:50%;display:grid;place-items:center;color:var(--field, #111110);background:var(--on, #f4f3ee);transition:transform .14s}.ds-mic svg{width:2.75rem;height:2.75rem}.ds-mic:active{transform:scale(.93)}.ds-mic:focus-visible{outline:.19rem solid var(--on, #f4f3ee);outline-offset:.19rem}"
+    },
+    {
+      "name": "主屏胶囊 实底",
+      "kind": "button",
+      "refersTo": "control-filled",
+      "description": "对话时最优先的动作，例如打断。",
+      "html": "<button class=\"ds-ctl-filled\">打断</button>",
+      "css": ".ds-ctl-filled{height:5.5rem;min-width:12rem;border:.2rem solid var(--on, #f4f3ee);border-radius:2.75rem;font:600 1.625rem var(--sans, Archivo, 'Noto Sans CJK SC', 'Noto Sans SC', 'PingFang SC', sans-serif);color:var(--field, #111110);background:var(--on, #f4f3ee);transition:transform .12s}.ds-ctl-filled:active{transform:scale(.96)}.ds-ctl-filled:focus-visible{outline:.19rem solid var(--on, #f4f3ee);outline-offset:.19rem}"
+    },
+    {
+      "name": "主屏胶囊 描边",
+      "kind": "button",
+      "refersTo": "control-outline",
+      "description": "次要动作，例如结束对话。",
+      "html": "<button class=\"ds-ctl-outline\">结束</button>",
+      "css": ".ds-ctl-outline{height:5.5rem;min-width:12rem;border:.2rem solid var(--on, #f4f3ee);border-radius:2.75rem;font:600 1.625rem var(--sans, Archivo, 'Noto Sans CJK SC', 'Noto Sans SC', 'PingFang SC', sans-serif);color:var(--on, #f4f3ee);background:none;transition:transform .12s}.ds-ctl-outline:active{transform:scale(.96)}.ds-ctl-outline:focus-visible{outline:.19rem solid var(--on, #f4f3ee);outline-offset:.19rem}"
+    },
+    {
+      "name": "设置页按钮",
+      "kind": "button",
+      "refersTo": "sheet-button",
+      "description": "走近操作的直角描边按钮；破坏性操作默认也是它。",
+      "html": "<button class=\"ds-sheet-btn\">清除</button>",
+      "css": ".ds-sheet-btn{min-width:9rem;height:4.5rem;padding:0 1.75rem;border:.15rem solid #111110;border-radius:0;font:600 1.5rem var(--sans, Archivo, 'Noto Sans CJK SC', 'Noto Sans SC', 'PingFang SC', sans-serif);color:#111110;background:none;transition:transform .12s}.ds-sheet-btn:active{transform:scale(.96)}.ds-sheet-btn:focus-visible{outline:.19rem solid #111110;outline-offset:.19rem}"
+    },
+    {
+      "name": "破坏性按钮 已确认一次",
+      "kind": "button",
+      "refersTo": "sheet-button-armed",
+      "description": "按第一下之后的状态，朱红实底，再按才执行。",
+      "html": "<button class=\"ds-armed\">确认关机</button>",
+      "css": ".ds-armed{min-width:9rem;height:4.5rem;padding:0 1.75rem;border:.15rem solid #f03c14;border-radius:0;font:600 1.5rem var(--sans, Archivo, 'Noto Sans CJK SC', 'Noto Sans SC', 'PingFang SC', sans-serif);color:#111110;background:#f03c14;transition:transform .12s}.ds-armed:active{transform:scale(.96)}.ds-armed:focus-visible{outline:.19rem solid #111110;outline-offset:.19rem}"
+    },
+    {
+      "name": "倒计时行",
+      "kind": "custom",
+      "description": "标签靠左、等宽时间靠右，条长表示剩余时间。",
+      "html": "<div class=\"ds-row\"><span>煮鸡蛋</span><b>4:31</b><u class=\"ds-row-bar\"><i></i></u></div>",
+      "css": ".ds-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:0 1.5rem;padding:.875rem 0;border-top:.125rem solid var(--line,#ffffff26);font:500 1.75rem var(--sans, Archivo, 'Noto Sans CJK SC', 'Noto Sans SC', 'PingFang SC', sans-serif);color:var(--on, #f4f3ee);background:var(--field, #111110)}.ds-row b{font-size:2.125rem;font-weight:600;font-variant-numeric:tabular-nums}.ds-row-bar{grid-column:1/-1;display:block;height:.4rem;margin-top:.625rem;background:var(--line,#ffffff26);text-decoration:none}.ds-row-bar i{display:block;height:100%;background:var(--me,#e8983a);transform-origin:0 50%;transform:scaleX(.45)}"
+    },
+    {
+      "name": "模型格 当前",
+      "kind": "card",
+      "refersTo": "model-cell-active",
+      "description": "整格反色表示正在使用，没有外框和圆角。",
+      "html": "<button class=\"ds-cell\"><span class=\"ds-cell-badge\">使用中</span><b>Claude</b><small>Anthropic</small></button>",
+      "css": ".ds-cell{position:relative;display:flex;flex-direction:column;justify-content:flex-end;width:24rem;min-height:13rem;padding:1.5rem;border:0;border-radius:0;text-align:left;color:#f4f3ee;background:#111110;font-family:var(--sans, Archivo, 'Noto Sans CJK SC', 'Noto Sans SC', 'PingFang SC', sans-serif)}.ds-cell b{font-size:1.75rem;line-height:2.25rem;font-weight:600}.ds-cell small{font-size:1.0625rem;opacity:.78}.ds-cell-badge{position:absolute;top:1.5rem;right:1.5rem;font-size:1.125rem;font-weight:700}.ds-cell:active{opacity:.7}.ds-cell:focus-visible{outline:.19rem solid #111110;outline-offset:.19rem}"
+    },
+    {
+      "name": "分页标签",
+      "kind": "nav",
+      "refersTo": "tab-active",
+      "description": "设置页三组，选中项反色实块。",
+      "html": "<div class=\"ds-tabs\" role=\"tablist\"><button class=\"ds-tab ds-tab-on\" role=\"tab\">屏幕和声音</button><button class=\"ds-tab\" role=\"tab\">闹钟和提醒</button><button class=\"ds-tab\" role=\"tab\">本机</button></div>",
+      "css": ".ds-tabs{display:flex;background:#f4f3ee}.ds-tab{flex:1;height:4.5rem;padding:0 .5rem;border:0;font:600 1.375rem var(--sans, Archivo, 'Noto Sans CJK SC', 'Noto Sans SC', 'PingFang SC', sans-serif);color:#55544f;background:none}.ds-tab-on{color:#f4f3ee;background:#111110}.ds-tab:focus-visible{outline:.19rem solid #111110;outline-offset:.19rem}"
+    }
+  ],
+  "narrative": {
+    "northStar": "隔着房间读的色场",
+    "overview": "小麦放在客厅或厨房，人多半在 1 到 2 米外，手可能还占着。系统因此只做一件事：把状态铺满整块屏幕。黑是待机，麦色是连接，纸白是聆听，钴蓝是思考，黄是回答，朱红是响铃。抬眼就能读到颜色，再看一眼才需要读字。\n\n纪律来自瑞士国际主义海报：纯平色块、大号等线数字、左对齐、细线分组、果断切换。对话屏把回答放到最大，设置走近才看，所以设置页是安静的纸白页，一次只显示一组。这一类产品常见的深色渐变加发光球体，以及一堆卡片和胶囊，都被明确拒绝。\n\n唯一有性格的部分是角色。**机主决定**：小麦采用 Grok Bot 头像那种风格，一个纯平圆润的实心色块，两道斜着的白色短眼，没有嘴，没有明暗。轮廓是本项目自己绘制的，不照描。**机主决定**：全系统唯一的 3D 效果，是眼睛在平面色块上滑动，并在靠近边缘时变窄。",
+    "keyCharacteristics": [
+      "整屏纯色表示状态，同时用轮廓和大字标题表达同一件事，不只靠颜色。",
+      "竖屏 800×1280 和横屏 1280×800 都是正式形态，各有自己的构图（机主决定）。",
+      "无阴影、无大面渐变、无描边卡片；分组靠细线、留白和反色实块。",
+      "所有动画只用 transform 和 opacity（机主决定的硬件约束）。"
+    ],
+    "rules": [
+      {
+        "name": "The Field Is State Rule",
+        "body": "整屏色场只表示状态，不表示内容分类、模型或品牌。新增界面不得给某个页面单独起一种底色。",
+        "section": "colors"
+      },
+      {
+        "name": "The Relative Ink Rule",
+        "body": "组件不写死颜色，只取当前色场的「底」和「字」两个角色；反色按钮就是把这两个角色对调。这样同一个按钮在六种色场上都成立。",
+        "section": "colors"
+      },
+      {
+        "name": "The Dark Sleep Rule",
+        "body": "睡眠时段屏幕保持全黑，不照亮房间，设置页也转成黑底；只有小麦本体可以带颜色。",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Time Rule",
+        "body": "时间和时长都用等宽数字。「标签 + 时间」的行里时间靠右，并排的时间才对得上；巨型时钟是主角，贴左。",
+        "section": "typography"
+      },
+      {
+        "name": "The Title Only Rule",
+        "body": "Xiaomai Title 只用于标题，关闭字重合成，不用于正文、按钮或数字。子集只含页面标题用字和常见模型名，新增标题文案要重新裁切子集；字库外的字回退到 Noto。",
+        "section": "typography"
+      },
+      {
+        "name": "The Eyes Only Depth Rule",
+        "body": "（机主决定）3D 感只来自眼睛：把两只眼睛投影到假想球面上，随朝向平移，并按余弦收窄，宽度下限为 30%。色块本身永远是平的，不加明暗、高光或阴影。",
+        "section": "elevation"
+      },
+      {
+        "name": "The Transform Only Rule",
+        "body": "（机主决定的硬件约束：WebKitGTK，Adreno 506）只动画 transform 和 opacity。颜色、尺寸和布局一律瞬切。声音电平驱动的部件要保持很小：小麦本体、麦克风圆环和声波条，约 30 帧每秒就够。",
+        "section": "elevation"
+      },
+      {
+        "name": "The Slide Away Rule",
+        "body": "状态切换时先把新颜色铺在底下，旧颜色的整层在 420ms 内向上滑走，看上去就是新颜色从屏幕底部升起。颜色之间不做淡入淡出，也不做渐变。时钟页和对话页互换时，新页面随色层一起从下方 2.5rem 处上浮淡入（360ms），这是唯一的淡入。消息自己没有入场动画。",
+        "section": "elevation"
+      },
+      {
+        "name": "The Settle First Rule",
+        "body": "（实测约束）动画等画面跟上变化后才开始，判断标准是变化后出现第一个快帧，最多等 0.5 秒。如果一变化就开始，计时会在设备绘制变化的 100–200ms 里照走，第一帧出来时已经过半。色层还在等待时又来一次变化，就重新等；色层已经在滑，就让它滑完，不重新开始。色层、整页和主区常驻各自的合成层，屏幕外的历史消息用 content-visibility 跳过排版和绘制。",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do 让颜色、轮廓和大字标题同时表达状态，不只靠颜色区分。",
+      "Do 在 800×1280 和 1280×800 两种形态下分别设计和验收每个界面。",
+      "Do 通过当前色场的「底」和「字」两个角色给组件上色，让它在所有色场上都成立。",
+      "Do 把时间和时长设成等宽数字，并让行内时间靠右。",
+      "Do 让所有可按目标至少 3.5rem（56px）高。",
+      "Do 用细线、留白和反色实块分组；描边按钮和细线分隔本来就是这个世界的材料。",
+      "Do 把破坏性操作默认做成描边，并放在更大的空白之后，确认一次才变朱红。",
+      "Do 在同一屏只显示当前能按的控件。"
+    ],
+    "donts": [
+      "Don't 给小麦加嘴、高光、明暗或阴影，也不要照描 Grok 的图形；Grok 的图标只在模型列表里代表它自己。",
+      "Don't 在眼睛滑动之外再做任何 3D 效果。",
+      "Don't 动画 transform 和 opacity 以外的属性，也不要用 backdrop-filter。",
+      "Don't 用阴影、模糊，或任何看得出过渡的渐变。厂商标志保留原样；滑块已填充部分那种单色填充也不算渐变。",
+      "Don't 用描边卡片包内容，也不要把胶囊用作标签或状态显示；胶囊只给能按的控件。",
+      "Don't 把随仓库分发的标题子集命名为 Smiley 或得意黑。",
+      "Don't 把模型 ID 现在用的 Noto Sans Mono 扩散到其它文字；数字和拉丁文的正式字体是 Archivo。",
+      "Don't 让声音电平驱动大面积部件。"
+    ]
+  }
+}

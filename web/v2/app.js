@@ -15,12 +15,7 @@ const ui = {
   alarms: { synced: true, items: [], missed: [], ringing: null, volume: 70, tone: 'coffee', tones: {} },
 };
 
-const SUGGEST = [
-  ['明天北京天气怎么样？', '#ffb54729', '#ffcf7a', '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6L6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/>'],
-  ['帮我想个周末计划', '#5ee0ff24', '#8ff0ff', '<path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z"/>'],
-  ['讲个冷笑话', '#ff7ac824', '#ff9bd6', '<circle cx="12" cy="12" r="9"/><path d="M8 14.5a5 5 0 0 0 8 0M9 9.5h.01M15 9.5h.01"/>'],
-  ['把音量调小一点', '#9b7bff2b', '#c8b4ff', '<path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 12h4"/>'],
-];
+const SUGGEST = ['明天北京天气怎么样？', '帮我想个周末计划', '讲个冷笑话', '把音量调小一点'];
 
 /* ---- clock ---- */
 function tick() {
@@ -35,112 +30,130 @@ function tick() {
   tickAlarms();
 }
 
-/* ---- the orb's corona: 48 bars around the orb, one shape per state ----
-   idle: short and still. connecting: 12 dashes, turned slowly by CSS. thinking: a comet orbiting (CSS).
-   listening: the whole ring pushes outward with your voice, all bars together — loud is big, quiet barely moves.
-   speaking: three lobes turning round the ring, swelling with the reply's volume.
-   Only listening/speaking redraw every frame; any state change morphs the bars over 0.4 s, then the loop stops.
-   All bars are drawn on one canvas: as 48 elements, restyling them 30 times a second kept
-   the device's main thread at ~93% and the page at ~17 fps. */
-const BARS = 48, R_IN = 110, BAR_W = 6, REST = 8, REACH = 46;   // px; REST + REACH stays inside the canvas
-const corona = document.createElement('canvas');
-const CSIZE = 330, DPR = Math.min(2, window.devicePixelRatio || 1);
-corona.width = corona.height = CSIZE * DPR;
-corona.style.width = corona.style.height = '100%';
-$('corona').appendChild(corona);
-const cx = corona.getContext('2d');
-const ANG = Array.from({ length: BARS }, (_, i) => i / BARS * Math.PI * 2);
-const COS = ANG.map(Math.cos), SIN = ANG.map(Math.sin);
-// per bar: [length px, opacity]; what is on screen, where a morph starts, and where the state wants it
-const cur = new Float32Array(BARS * 2), from = new Float32Array(BARS * 2), tgt = new Float32Array(BARS * 2);
-let barFill = null, barFillState = '';
-function fillFor(state) {
-  // one radial gradient for all bars: inner end --c2, outer end --c1
-  if (barFillState !== state) {
-    const css = getComputedStyle(document.body);
-    barFill = cx.createRadialGradient(0, 0, R_IN, 0, 0, R_IN + REST + REACH);
-    barFill.addColorStop(0, css.getPropertyValue('--c2').trim());
-    barFill.addColorStop(1, css.getPropertyValue('--c1').trim());
-    barFillState = state;
-  }
-  return barFill;
+/* ---- 小麦: bot.js is the bloub engine (MIT, see bot.LICENSE.txt): one shape that morphs
+   between states, two eyes on a sphere, measured off xAI's reference video. This file only draws its frames.
+   Drawing rewrites SVG paths, so unlike everything else on the page it repaints: it is capped at botFps,
+   and each attribute is only written when it changed. */
+const STILL = document.documentElement.classList.contains('still');
+const BOT = { idle: 'idle', connecting: 'comet', listening: 'wide', thinking: 'thinking', speaking: 'play' };
+let botFps = 15;
+const SVGNS = 'http://www.w3.org/2000/svg';
+const mixHex = (a, b, t) => {
+  const c = s => [1, 3, 5].map(i => parseInt(s.slice(i, i + 2), 16));
+  const [x, y] = [c(a), c(b)];
+  return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join('');
+};
+function setAttrs(el, attrs) {
+  const seen = el._a || (el._a = {});
+  for (const k in attrs) if (seen[k] !== attrs[k]) { seen[k] = attrs[k]; el.setAttribute(k, attrs[k]); }
 }
-// Bars of (nearly) the same opacity share one path and one fill: 48 separate fills cost the device's
-// main thread ~20% of a core while speaking. The path takes each bar's transform as it is added.
-const bucket = new Uint8Array(BARS);
-function drawBars(bars) {
-  const c = CSIZE * DPR / 2;
-  cx.setTransform(1, 0, 0, 1, 0, 0);
-  cx.clearRect(0, 0, corona.width, corona.height);
-  cx.fillStyle = fillFor(document.body.dataset.state || 'idle');
-  for (let i = 0; i < BARS; i++) bucket[i] = bars[i * 2] < .5 ? 0 : Math.max(1, Math.round(bars[i * 2 + 1] * 20));
-  for (let q = 1; q <= 20; q++) {
-    if (!bucket.includes(q)) continue;
-    cx.beginPath();
-    for (let i = 0; i < BARS; i++) {
-      if (bucket[i] !== q) continue;
-      cx.setTransform(COS[i] * DPR, SIN[i] * DPR, -SIN[i] * DPR, COS[i] * DPR, c, c);
-      cx.roundRect(-BAR_W / 2, -R_IN - bars[i * 2], BAR_W, bars[i * 2], BAR_W / 2);
-    }
-    cx.setTransform(DPR, 0, 0, DPR, c, c);   // the radial gradient is centred on the orb
-    cx.globalAlpha = q / 20;
-    cx.fill();
+let botIds = 0;
+class BotView {
+  constructor(svg, state, ink, paper) {
+    this.ink = ink; this.paper = paper;
+    this.engine = new XiaomaiBot.BotEngine(XiaomaiBot.RAYON, state);
+    const V = XiaomaiBot.DEMI_VIEWBOX, id = 'botclip' + ++botIds;
+    svg.setAttribute('viewBox', `${-V} ${-V} ${V * 2} ${V * 2}`);
+    const add = (parent, tag, attrs) => {
+      const el = document.createElementNS(SVGNS, tag);
+      setAttrs(el, attrs || {});
+      parent.appendChild(el);
+      return el;
+    };
+    const defs = add(svg, 'defs');
+    this.clip = add(add(defs, 'clipPath', { id }), 'path');
+    this.arcsBack = add(svg, 'g', { fill: 'none', 'stroke-linecap': 'round' });
+    this.dotsBack = add(svg, 'g');
+    this.bodyGroup = add(svg, 'g');
+    this.body = add(this.bodyGroup, 'path', { class: 'bot-body' });
+    this.eyeGroup = add(this.bodyGroup, 'g', { 'clip-path': `url(#${id})`, class: 'bot-eyes' });
+    this.eyes = [add(this.eyeGroup, 'path'), add(this.eyeGroup, 'path')];
+    this.notch = add(this.bodyGroup, 'circle');
+    this.dotsFront = add(svg, 'g');
+    this.notif = add(svg, 'circle', { fill: '#2496e8' });
+    this.arcsFront = add(svg, 'g', { fill: 'none', 'stroke-linecap': 'round' });
+    this.add = add;
   }
-  cx.globalAlpha = 1;
+  drawDots(group, dots) {
+    const R = XiaomaiBot.RAYON;
+    while (group.childNodes.length > dots.length) group.lastChild.remove();
+    dots.forEach((dot, i) => {
+      const tag = dot.d ? 'path' : 'circle';
+      let el = group.childNodes[i];
+      if (!el || el.tagName !== tag) {
+        const fresh = document.createElementNS(SVGNS, tag);
+        if (el) group.replaceChild(fresh, el); else group.appendChild(fresh);
+        el = fresh;
+      }
+      const fill = dot.color ?? (dot.depth === undefined ? this.ink : mixHex(this.paper, this.ink, dot.depth));
+      setAttrs(el, dot.d
+        ? { fill, opacity: dot.opacity, d: dot.d, transform: `translate(${dot.x} ${dot.y}) rotate(${dot.rot ?? 0}) scale(${R})` }
+        : { fill, opacity: dot.opacity, cx: dot.x, cy: dot.y, r: dot.r });
+    });
+  }
+  drawArcs(group, arcs, key) {
+    while (group.childNodes.length > arcs.length) group.lastChild.remove();
+    arcs.forEach((arc, i) => {
+      const el = group.childNodes[i] || this.add(group, 'path');
+      setAttrs(el, { d: arc[key], stroke: this.ink, 'stroke-width': arc.width, opacity: arc.opacity });
+    });
+  }
+  render(f) {
+    setAttrs(this.body, { d: f.bodyPath });
+    setAttrs(this.clip, { d: f.bodyPath });
+    setAttrs(this.bodyGroup, { opacity: f.bodyAlpha });
+    this.eyes.forEach((el, i) => {
+      const eye = f.eyes[i];
+      if (eye) setAttrs(el, { d: eye.d, transform: eye.matrix, opacity: eye.alpha });
+      else setAttrs(el, { opacity: 0 });
+    });
+    setAttrs(this.notch, f.notch ? { cx: f.notch.x, cy: f.notch.y, r: f.notch.r, fill: this.paper } : { r: 0 });
+    setAttrs(this.notif, f.notif ? { cx: f.notif.x, cy: f.notif.y, r: f.notif.r } : { r: 0 });
+    this.drawDots(this.dotsBack, f.dotsBehind ? f.dots : []);
+    this.drawDots(this.dotsFront, f.dotsBehind ? [] : f.dots);
+    this.drawArcs(this.arcsBack, f.arcs, 'back');
+    this.drawArcs(this.arcsFront, f.arcs, 'front');
+  }
+}
+const botNow = () => performance.now() / 1000;
+const mainBot = new BotView($('bot'), 'idle', '#e8983a', '#111110');
+const ringBot = new BotView($('ringBot'), 'exclaim', '#111110', '#f03c14');
+let botLast = 0;
+function botLoop(ms) {
+  requestAnimationFrame(botLoop);
+  if (ms - botLast < 1000 / botFps - 2) return;
+  botLast = ms;
+  const view = document.body.classList.contains('ringing') ? ringBot : mainBot;
+  view.render(view.engine.sample(botNow()));
+}
+function botSettled(view) {   // screenshots: one finished frame, no loop
+  view.render(view.engine.sample(botNow() + 3));
 }
 
-// target shape of a state into out; v = sound level 0..1, p = phase (s), t = seconds in this state
-function shapeOf(state, v, p, t, out) {
-  for (let i = 0; i < BARS; i++) {
-    const a = ANG[i], f = i / BARS;
-    let len = REST, alpha = 1;
-    if (state === 'thinking') { len = 6.6 + 28.5 * f * f; alpha = .1 + .9 * f ** 1.6; }
-    else if (state === 'connecting') { len = i % 4 ? 4.2 : 16.5; alpha = i % 4 ? .35 : 1; }
-    else if (state === 'listening') {
-      // a short burst on waking says "I'm here", then the ring follows the voice as one
-      const env = Math.max(v, .5 * Math.max(0, 1 - t / .6) ** 2);
-      const grain = .84 + .16 * Math.sin(a * 5 + p * 3.1) * Math.sin(a * 3 - p * 2.3);
-      len = REST - 1 + 1.2 * Math.sin(a * 4 + p * 1.5) + REACH * env * grain;
-    } else if (state === 'speaking') {
-      const lobe = .5 + .5 * Math.sin(a * 3 - p * 1.3);
-      len = REST + 4 * lobe + REACH * v * (.3 + .7 * lobe);
-      alpha = .6 + .4 * lobe;
-    }
-    out[i * 2] = len;
-    out[i * 2 + 1] = alpha;
-  }
-}
-
-// The mic level (RMS) in decibels, so a quiet voice visibly moves the corona. Measured on the device
+// The mic level (RMS) in decibels, so a quiet voice visibly moves 小麦. Measured on the device
 // (2026-11-01, 9 listening turns): room noise -74..-80 dBFS with rare blips to -62, normal speech
-// -60..-42 dBFS. The old linear scale (full at -23 dBFS) moved the corona 1–7% for that speech.
+// -60..-42 dBFS. The old linear scale (full at -23 dBFS) moved it 1–7% for that speech.
 // Now noise stays 0, a quiet voice (-55) reaches ~30%, a normal one (-45) ~58%, a loud one (-30) 100%.
 const MIC_FLOOR = -66, MIC_FULL = -30;   // dBFS
 const micLevel = rms => Math.min(1, Math.max(0, (20 * Math.log10(rms + 1e-6) - MIC_FLOOR) / (MIC_FULL - MIC_FLOOR)));
 
-const STILL = document.documentElement.classList.contains('still');
-const level = { target: 0, value: 0, phase: 0, raf: 0, last: 0, state: '', since: 0, mix: 1 };
+const level = { target: 0, value: 0, phase: 0, raf: 0, last: 0, state: '', key: '' };
 const isLive = s => s === 'listening' || s === 'speaking';
-function setCorona(state) {
+function setMe(state, micOff, reports) {
+  const key = micOff && state === 'idle' ? 'sleep' : reports && state === 'idle' ? 'notify' : BOT[state] || 'idle';
+  if (key !== level.key) {
+    level.key = key;
+    const css = getComputedStyle(document.body);
+    mainBot.ink = css.getPropertyValue('--me').trim();
+    mainBot.paper = css.getPropertyValue('--field').trim();
+    mainBot.engine.setState(key, botNow());
+    if (STILL) { botSettled(mainBot); botSettled(ringBot); }
+  }
   if (state === level.state) return;
-  // morph from what is on screen; a spinning corona is turned by CSS, so carry its angle into the bars
-  const m = getComputedStyle($('corona')).transform.match(/matrix\(([^,]+),\s*([^,]+)/);
-  const k = m ? Math.round(Math.atan2(+m[2], +m[1]) / (Math.PI * 2) * BARS) : 0;
-  for (let i = 0; i < BARS; i++) {
-    const j = ((i - k) % BARS + BARS) % BARS;
-    from[i * 2] = cur[j * 2]; from[i * 2 + 1] = cur[j * 2 + 1];
-  }
   level.state = state;
-  level.since = performance.now();
-  level.mix = level.last ? 0 : 1;   // the first paint just draws
   if (!isLive(state)) level.target = 0;
-  if (STILL) {   // screenshots: one fairly loud, settled frame
-    shapeOf(state, isLive(state) ? .7 : 0, 1.2, 9, cur);
-    drawBars(cur);
-    if (isLive(state)) drawLive(.7, 1.2);
-    return;
-  }
-  if (!level.raf) {
+  if (STILL) return drawLive(isLive(state) ? .6 : 0, 1.2);
+  if (isLive(state) && !level.raf) {
     level.last = performance.now() - 34;
     level.raf = requestAnimationFrame(levelLoop);
   }
@@ -152,34 +165,78 @@ function levelLoop(now) {
   level.last = now;
   level.value += (level.target - level.value) * (level.target > level.value ? .55 : .2);
   level.phase += dt * 2.4;
-  const live = isLive(level.state);
-  shapeOf(level.state, level.value, level.phase, (now - level.since) / 1000, tgt);
-  if (level.mix < 1) {
-    level.mix = Math.min(1, level.mix + dt / .4);
-    const e = 1 - (1 - level.mix) ** 3;
-    for (let i = 0; i < tgt.length; i++) cur[i] = from[i] + (tgt[i] - from[i]) * e;
-  } else cur.set(tgt);
-  drawBars(cur);
-  if (live || level.mix < 1) drawLive(level.value, level.phase);   // after live: let the level settle
+  if (isLive(level.state) || level.value > .01) drawLive(level.value, level.phase);
   else {
     cancelAnimationFrame(level.raf);
     level.raf = 0;
     level.target = level.value = 0;
-    $('corona').style.transform = $('core').style.transform = $('micRing').style.transform = $('mouth').style.transform = '';
+    $('core').style.transform = $('micRing').style.transform = '';
   }
 }
-// The whole corona layer grows with the level too (compositor only, no repaint): with the longer bars,
-// the tips go from r ≈ 117 px when quiet to ≈ 190 px when loud. Core, mouth, mic ring and the wave follow.
+// The voice moves the whole layer, which costs no repaint: it grows when listening, squashes when speaking.
 function drawLive(v, p) {
-  $('corona').style.transform = `scale(${(1 + v * .16).toFixed(3)})`;
-  $('core').style.transform = `scale(${(1 + v * .13).toFixed(3)})`;
-  $('mouth').style.transform = `scaleY(${(.55 + v * 1.6).toFixed(3)})`;
+  $('core').style.transform = level.state === 'speaking'
+    ? `scale(${(1 + v * .07).toFixed(3)}, ${(1 - v * .1).toFixed(3)})`
+    : v ? `scale(${(1 + v * .12).toFixed(3)})` : '';
   if (level.state === 'listening') $('micRing').style.transform = `scale(${(1 + v * .16).toFixed(3)})`;   // invisible otherwise
   const pending = $('pending');
   if (pending) pending.querySelectorAll('.wave b').forEach((b, i) => { b.style.transform = `scaleY(${(.18 + v * (.5 + .5 * Math.sin(p * 3 + i * 1.3))).toFixed(3)})`; });
 }
 
-/* ---- status: orb, title, hint, buttons ---- */
+// Runs fn once the screen has caught up with a change: at the first quick frame after it, or after 0.5 s.
+// Started at once, an animation's clock runs on through the frames that draw the change, and its first
+// frame on screen is already most of the way. On the device a colour change takes two frames of ~65 ms
+// and bringing in the chat page ~70 ms and then ~95 ms (measured 2026-11-09), so a fixed wait won't do.
+function whenSettled(fn) {
+  const since = performance.now(), h = { id: 0, cancel() { cancelAnimationFrame(h.id); } };
+  let n = 0, last = 0;
+  h.id = requestAnimationFrame(function check(t) {
+    const quick = last && t - last < 30;
+    last = t;
+    if (++n < 3 || (!quick && t - since < 500)) h.id = requestAnimationFrame(check);
+    else fn();
+  });
+  return h;
+}
+
+// A new state: paint the new colour underneath at once and slide the old one up and away. The curtain
+// and the page keep their layers for good (app.css), so a change costs one repaint of the page.
+// The wake comes as two changes 40–50 ms apart (connecting, then listening with the chat page): a change
+// while the curtain still waits makes it wait again, so it slides once, after the heavier of the two.
+// A change while it is already moving lets it finish: the colour underneath is simply the newest one.
+let wipeAnim = null, wipeWait = null;
+function wipe(oldField) {
+  if (STILL || wipeAnim) return;
+  const w = $('wipe');
+  if (wipeWait) wipeWait.cancel();
+  else { w.style.background = oldField; w.style.transform = 'none'; }
+  wipeWait = whenSettled(() => {
+    wipeWait = null;
+    wipeAnim = w.animate([{ transform: 'none' }, { transform: 'translateY(-100%)' }], { duration: 420, easing: 'cubic-bezier(.4, 0, .2, 1)' });
+    wipeAnim.onfinish = wipeAnim.oncancel = () => { w.style.transform = ''; wipeAnim = null; };
+  });
+}
+// The clock page and the chat swap places: the new one rises in as the curtain lifts instead of just being there
+let arriveAnim = null, arriveWait = null;
+function arrive() {
+  if (STILL) return;
+  const m = $('main');
+  if (arriveWait) arriveWait.cancel();
+  if (arriveAnim) arriveAnim.cancel();
+  // the starting pose is set now and the rise starts in the same frame as the curtain: started 60 ms
+  // later, it cost the device a slow frame mid-slide (measured 2026-11-09)
+  m.style.opacity = '0';
+  m.style.transform = 'translateY(2.5rem)';
+  arriveWait = whenSettled(() => {
+    arriveWait = null;
+    arriveAnim = m.animate([{ opacity: 0, transform: 'translateY(2.5rem)' }, { opacity: 1, transform: 'none' }],
+      { duration: 360, easing: 'cubic-bezier(.2, .8, .2, 1)' });
+    m.style.opacity = m.style.transform = '';
+    arriveAnim.onfinish = arriveAnim.oncancel = () => { arriveAnim = null; };
+  });
+}
+
+/* ---- status: colour, 小麦, title, hint, buttons ---- */
 function modelName() {
   const cur = ui.models.current;
   return cur ? cur.label : '模型';
@@ -189,7 +246,10 @@ const shownState = () => (ui.ptt ? 'listening' : ui.status.state);
 function renderStatus() {
   const { state, connected } = ui.status;
   const shown = shownState();
-  document.body.dataset.state = shown;
+  if (document.body.dataset.state !== shown) {
+    wipe(getComputedStyle(document.body).getPropertyValue('--field').trim());
+    document.body.dataset.state = shown;
+  }
   const text = {
     idle: ['说<em>「小麦小麦」</em>', connected ? '对话还在，唤醒后可以接着聊' : '或者点麦克风；按住可以直接说'],
     connecting: ['正在连接…', '连上小智网关后就开始听'],
@@ -209,6 +269,7 @@ function renderStatus() {
   else if (reports && shown === 'idle') text[1] = '有待汇报：点右上角收听，或叫一声「小麦小麦」';
   else if (sleeping && shown === 'idle' && !connected) text[1] = '睡眠时段：汇报不会自动念';
   $('title').innerHTML = text[0];
+  document.body.classList.toggle('long-title', $('title').textContent.length > 6);
   $('hint').textContent = text[1];
   // recognising, thinking or speaking: the turn can be interrupted (the question is dropped if nothing was said yet)
   $('btnAbort').disabled = !connected || !(state === 'speaking' || state === 'thinking' || (ui.status.recognising && !ui.ptt));
@@ -218,7 +279,7 @@ function renderStatus() {
   link.querySelector('span').textContent = connected ? '对话中' : '待机';
   renderSide();
   renderPending();
-  setCorona(shown);
+  setMe(shown, micOff, reports);
   renderSettings();
   renderBright();
   renderScreenOff();
@@ -281,6 +342,17 @@ async function switchModel(m) {
   renderModels(); renderThread(); renderStatus();
   toast(error || `已切换到 ${m.label}`, error ? 'error' : '');
 }
+
+/* ---- settings: three groups, one shown at a time ---- */
+function showTab(name) {
+  for (const b of document.querySelectorAll('.tab')) {
+    b.classList.toggle('on', b.dataset.tab === name);
+    b.setAttribute('aria-selected', String(b.dataset.tab === name));
+  }
+  for (const p of document.querySelectorAll('.pane')) p.classList.toggle('on', p.dataset.pane === name);
+  document.querySelector('.panel').scrollTop = 0;
+}
+for (const b of document.querySelectorAll('.tab')) b.addEventListener('click', () => showTab(b.dataset.tab));
 
 /* ---- settings: sleep hours ---- */
 const sleepEdit = {};   // changes sent but not yet confirmed by a state event
@@ -495,6 +567,8 @@ function alarmRow(v) {
   if (v.kind === 'reminder') sub.push(v.spoken ? '到点念出来' : v.spoken === false ? '只响铃（没合成出语音）' : '正在合成语音');
   return [`${hhmm(v.at)}${v.label ? ' ' + esc(v.label) : ''}`, sub.join(' · ')];
 }
+// A countdown's bar shows how much of it is left: its full length is the whole countdown
+const timerTotal = v => Math.max(1, v.at - (v.created || now_s()));
 function renderAlarms() {
   const a = ui.alarms;
   document.body.classList.toggle('alarms-paused', !a.synced);
@@ -503,10 +577,12 @@ function renderAlarms() {
   // home: the running countdowns and the next alarm or reminder
   const timers = a.items.filter(v => v.kind === 'timer').slice(0, 3);
   const next = a.items.find(v => v.kind !== 'timer');
-  const chips = timers.map(v => `<div class="na timer">倒计时 <b data-left="${v.at}">${left(v.at)}</b>${v.label ? esc(v.label) : ''}</div>`);
-  if (next) chips.push(`<div class="na">${KIND_ICON[next.kind]} <b>${dayText(next.at)} ${hhmm(next.at)}</b>${esc(next.label || '')}</div>`);
-  if (!a.synced && a.items.length) chips.unshift('<div class="na paused">时间未同步，闹钟暂停</div>');
+  const chips = timers.map(v => `<div class="na timer"><span>${esc(v.label || '倒计时')}</span><b data-left="${v.at}">${left(v.at)}</b>` +
+    `<u class="na-bar"><i data-bar="${v.at}" data-total="${timerTotal(v)}"></i></u></div>`);
+  if (next) chips.push(`<div class="na"><span>${KIND_ICON[next.kind]}${next.label ? ' · ' + esc(next.label) : ''}</span><b>${dayText(next.at)} ${hhmm(next.at)}</b></div>`);
+  if (!a.synced && a.items.length) chips.unshift('<div class="na paused"><span>时间未同步，闹钟暂停</span></div>');
   $('nextAlarms').innerHTML = chips.join('');
+  document.body.classList.toggle('many-alarms', chips.length > 2);
   // settings: the list, the tones, the missed ones
   $('alarmCount').textContent = a.items.length ? `${a.items.length} 条` : '';
   $('alarmList').innerHTML = a.items.length ? a.items.map(v => {
@@ -518,6 +594,7 @@ function renderAlarms() {
     `<button data-tone="${esc(k)}" class="${k === a.tone ? 'on' : ''}">${esc(name)}</button>`).join('');
   // home: the missed ones (newest first, at most 3 shown) until 知道了
   $('missedBox').hidden = !a.missed.length;
+  document.body.classList.toggle('has-missed', a.missed.length > 0);
   $('missedList').innerHTML = a.missed.slice(0, 3).map(m =>
     `<div class="mh"><b>${dayText(m.at)} ${hhmm(m.at)}</b>${KIND_ICON[m.kind] || ''}${m.label ? ' · ' + esc(m.label) : ''}` +
     `<small>${m.why === 'off' ? '设备关着' : m.kind === 'reminder' ? '提醒了 3 分钟没人停' : '响了 10 分钟没人停'}</small></div>`).join('') +
@@ -530,12 +607,16 @@ function renderRing() {
   const r = ui.alarms.ringing;
   if (!r) return;
   const items = r.items || [];
-  $('ringKind').textContent = [...new Set(items.map(v => v.type))].join('、') || '闹钟';
-  $('ringLabel').textContent = items.map(v => v.label).filter(Boolean).join('、');
+  const kind = [...new Set(items.map(v => v.type))].join('、') || '闹钟';
+  const label = items.map(v => v.label).filter(Boolean).join('、');
+  $('ringLabel').textContent = label ? `${kind} · ${label}` : kind;
   $('ringNote').textContent = (r.notes || []).join('；');
 }
 function tickAlarms() {
   for (const el of document.querySelectorAll('[data-left]')) el.textContent = left(Number(el.dataset.left));
+  for (const el of document.querySelectorAll('[data-bar]')) {
+    el.style.transform = `scaleX(${Math.max(0, Math.min(1, (Number(el.dataset.bar) - now_s()) / Number(el.dataset.total))).toFixed(4)})`;
+  }
   const timer = ui.alarms.items.find(v => v.kind === 'timer');
   $('timerText').textContent = timer ? left(timer.at) : '';
 }
@@ -601,6 +682,7 @@ function renderUpdate() {
   }
   $('upd').classList.toggle('new', !!avail && !busy);
   $('gearDot').classList.toggle('on', !!avail && !busy);
+  $('tabDot').classList.toggle('on', !!avail && !busy);
   $('updTitle').textContent = title;
   $('updSub').textContent = text;
   $('updSub').classList.toggle('bad', !!bad);   // toggle(x, undefined) would flip it
@@ -641,14 +723,14 @@ $('updBtn').addEventListener('click', async () => {
 if (DEMO !== null) {
   // ?demo&upd=new|busy|failed: preview the update card (opens the settings sheet)
   const kind = new URLSearchParams(location.search).get('upd');
-  const avail = { version: '0.2.0', size: 9.4 * 1048576, notes: ['聊天页的光球加了表情', '修好了睡眠时段跨午夜时不生效'] };
+  const avail = { version: '0.2.0', size: 9.4 * 1048576, notes: ['界面换成了新的小麦', '修好了睡眠时段跨午夜时不生效'] };
   const now = Date.now() / 1000;
   ui.version = '0.1.0';
   ui.update = { enabled: true, checked: now - 3600, available: kind ? avail : null,
                 job: kind === 'busy' ? { state: 'downloading', version: '0.2.0', progress: .42, time: now }
                    : kind === 'failed' ? { state: 'rolled_back', version: '0.2.0', time: now,
                                            message: '0.2.0 自检没通过（新版本连不上小智网关），已退回 0.1.0' } : null };
-  if (kind) $('settings').classList.add('on');
+  if (kind) { $('settings').classList.add('on'); showTab('sys'); }
 }
 
 /* ---- settings: chat history (kept on the hub; clearing also clears the hub's copy) ---- */
@@ -702,7 +784,11 @@ async function renderIp() {
   $('ipNum').textContent = ip || '未联网';
   $('ipSub').textContent = ip ? `在同一网络的电脑上打开 http://${ip}:16688/admin 进网关后台` : '连上 WiFi 后这里显示设备的地址';
 }
-$('btnSettings').addEventListener('click', () => { $('settings').classList.add('on'); renderIp(); });
+$('btnSettings').addEventListener('click', () => {
+  if ($('gearDot').classList.contains('on')) showTab('sys');   // the dot means an update is waiting there
+  $('settings').classList.add('on');
+  renderIp();
+});
 
 // 关机: halts the system (it stays dark with the power cable in), so unplugging can't damage it
 let powerArmed = 0;
@@ -738,7 +824,13 @@ function welcomeShown(messages, state, connected) {
   return ['idle', 'connecting'].includes(state) && (!messages || !connected);
 }
 function renderSide() {
-  document.body.classList.toggle('fresh', welcomeShown(ui.thread.messages.length, shownState(), !!ui.status.connected));
+  const fresh = welcomeShown(ui.thread.messages.length, shownState(), !!ui.status.connected);
+  document.body.classList.toggle('no-msgs', !ui.thread.messages.length);
+  document.body.classList.toggle('one-msg', ui.thread.messages.length === 1);
+  const changed = fresh !== document.body.classList.contains('fresh');
+  document.body.classList.toggle('fresh', fresh);
+  if (changed && !fresh) scrollDown();   // the chat was hidden, so it could not keep its place
+  if (changed) arrive();
 }
 
 function entryModel(entry) {
@@ -750,7 +842,7 @@ function renderHead() {
   $('headLogo').src = logoSrc(m);
   $('headTitle').textContent = m ? `与 ${m.label} 的对话` : '对话';
   const n = ui.thread.messages.length;
-  $('headMeta').textContent = n ? `${n} 条消息 · ${ui.status.connected ? '对话中' : '记录已保存'}` : '新对话';
+  $('headMeta').textContent = n && !ui.status.connected ? '记录已保存' : '';   // the colour and the title say the rest
 }
 
 function fmtTime(t) {
@@ -779,15 +871,22 @@ function msgEl(m) {
 function scrollDown() {
   const box = $('messages');
   box.scrollTop = box.scrollHeight;
+  // messages off screen are only estimated until drawn (content-visibility in app.css): the ones brought
+  // into view take their real height a frame later, so keep to the bottom until it holds
+  let n = 0, last = box.scrollHeight, still = 0;
+  requestAnimationFrame(function settle() {
+    box.scrollTop = box.scrollHeight;
+    still = box.scrollHeight === last ? still + 1 : 0;
+    last = box.scrollHeight;
+    if (still < 2 && ++n < 12) requestAnimationFrame(settle);
+  });
 }
 
 function renderThread() {
   const box = $('messages');
   box.textContent = '';
   for (const m of ui.thread.messages) {
-    const el = msgEl(m);
-    el.style.animation = 'none';
-    box.appendChild(el);
+    box.appendChild(msgEl(m));
   }
   markLive();
   renderHead();
@@ -840,10 +939,10 @@ function renderPending() {
   el.dataset.kind = kind;
   el.className = 'msg pending ' + kind;
   if (kind.startsWith('user')) {
-    el.innerHTML = `<span class="wave">${'<b></b>'.repeat(5)}</span>${kind === 'user recog' ? '正在识别…' : ui.ptt ? '说完松开' : '正在听…'}`;
+    el.innerHTML = `<span class="wave">${'<b></b>'.repeat(5)}</span>`;   // the big title says what is happening
   } else {
     el.innerHTML = `<img class="tile" src="${esc(logoSrc(entryModel(ui.thread.entry)))}" alt="">` +
-      `<div class="body"><span class="dots"><i></i><i></i><i></i></span><span class="label">正在思考</span></div>`;
+      `<div class="body"><span class="dots"><i></i><i></i><i></i></span></div>`;
   }
   $('messages').appendChild(el);
   scrollDown();
@@ -947,6 +1046,7 @@ function pttEnd() {
 }
 $('btnMic').addEventListener('pointerdown', e => {
   e.preventDefault();
+  if (ui.status.mic === false) return toast('麦克风关着，拨开机身侧面的开关就能说话');
   holdTimer = setTimeout(() => {
     holdTimer = null;
     pttStart();
@@ -972,11 +1072,10 @@ $('modelPill').addEventListener('click', () => openSheet(true));
 $('sheetClose').addEventListener('click', () => openSheet(false));
 document.addEventListener('contextmenu', e => e.preventDefault());
 
-for (const [q, bg, fg, icon] of SUGGEST) {
+for (const q of SUGGEST) {
   const b = document.createElement('button');
   b.className = 'chip';
-  b.innerHTML = `<i style="background:${bg};color:${fg}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg></i>${esc(q)}`;
+  b.textContent = q;
   b.addEventListener('click', () => post('/api/text', { text: q }));
   $('chips').appendChild(b);
 }
@@ -1026,7 +1125,7 @@ const demo = DEMO === null ? null : (() => {
   const alarmsDemo = () => ({
     synced: true, volume: 70, tone: 'coffee', tones, ringing: null,
     items: [
-      { id: 3, kind: 'timer', type: '倒计时', label: '煮鸡蛋', at: now() + 271, repeat: '', snoozed: false },
+      { id: 3, kind: 'timer', type: '倒计时', label: '煮鸡蛋', at: now() + 271, created: now() - 329, repeat: '', snoozed: false },
       { id: 1, kind: 'alarm', type: '闹钟', label: '起床', at: now() + 9 * 3600, repeat: '每个工作日（周一到周五）', snoozed: false },
       { id: 2, kind: 'reminder', type: '提醒', label: '晾衣服', at: now() + 26 * 3600, repeat: '', snoozed: false, spoken: true },
     ],
@@ -1115,3 +1214,4 @@ renderStatus();
 renderThread();
 if (demo) demo.start();
 else connectEvents();
+if (STILL) { botSettled(mainBot); botSettled(ringBot); } else requestAnimationFrame(botLoop);
