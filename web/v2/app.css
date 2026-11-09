@@ -72,6 +72,11 @@ button:focus-visible, input:focus-visible { outline: .19rem solid var(--on); out
 .report-pill svg { width: 1.5rem; height: 1.5rem; }
 .report-pill:active { transform: scale(.95); }
 .has-reports .report-pill { display: flex; }
+/* a phone plays through the device (Bluetooth speaker): what, quietly */
+.bt-chip { display: none; align-items: center; gap: .5rem; max-width: 22rem; font-size: 1.375rem; font-weight: 500; color: var(--on2); }
+.bt-chip svg { flex: none; width: 1.625rem; height: 1.625rem; }
+.bt-chip span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.bt-playing .bt-chip { display: flex; }
 
 /* ---- layout: landscape is two columns; portrait is further down ---- */
 .main { display: grid; grid-template-columns: 27rem minmax(0, 1fr); gap: 3.5rem; min-height: 0; will-change: transform, opacity; }
@@ -261,6 +266,8 @@ body.sleeping .sheet { --field: var(--black); --on: var(--paper); --on2: #a9a8a2
 body.sleeping #updSub.bad { color: #ff9f88; }
 .upd-notes { margin: 1rem 0 1.5rem; padding: 0; list-style: none; font-size: 1.25rem; line-height: 1.6; color: var(--on2); }
 .upd-notes:empty, .upd-bar[hidden] { display: none; }
+.upd-notes li.h { margin-top: .5rem; font-weight: 700; color: var(--on); }   /* 系统层 / 客户端, when both come */
+.upd-notes li.h:first-child { margin-top: 0; }
 .upd-bar { height: .625rem; margin: 0 0 1.25rem; background: var(--line); overflow: hidden; }
 .upd-bar i { display: block; height: 100%; background: var(--on); transform-origin: 0 50%; transform: scaleX(0); transition: transform .4s; }
 .upd-bar.busy i { width: 30%; transform: none; animation: run 1.4s ease-in-out infinite; }
@@ -284,6 +291,64 @@ body.sleeping .link-btn.armed { color: #ff9f88; }
 .al-text > span { font-size: 1.125rem; color: var(--on2); }
 .al-del { flex: none; min-width: 7rem; height: 3.75rem; padding: 0 1.25rem; font-size: 1.25rem; font-weight: 500; border: .125rem solid var(--on2); }
 .tone-head { margin-top: 1.25rem; }
+/* Bluetooth speaker: the phones it knows are rows like the alarms */
+.bt-card { display: flex; flex-direction: column; }
+#btName:empty { display: none; }
+.bt-card .alarm-list { margin-bottom: 1.25rem; }
+.bt-card.off .alarm-list, .bt-card.off .bt-add { display: none; }
+.al-text .live { color: var(--on); font-weight: 600; }
+.bt-add { flex: none; height: 4.5rem; margin-bottom: 1.5rem; font-size: 1.5rem; font-weight: 600; border: .15rem solid var(--on); }
+.bt-add:active { transform: scale(.98); }
+.bt-add.on { color: var(--field); background: var(--on); }
+
+/* ---- WiFi, a sheet over the settings ---- */
+.sheet.wifi { z-index: 25; }
+.w-pane { display: none; flex: 1; min-height: 0; flex-direction: column; padding-bottom: 2rem; }
+.w-pane.on { display: flex; }
+.w-btns, .w-title { display: flex; align-items: center; gap: .5rem; }
+.w-title { gap: 1rem; min-width: 0; }
+.w-title > div { min-width: 0; }
+.w-title h2 { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+#wBack { margin: 0 0 0 -1rem; }
+.w-btns .close.spin svg { animation: wspin 1s linear infinite; }
+@keyframes wspin { to { transform: rotate(360deg); } }
+/* networks: whole cells like the models, the one in use turned over */
+.w-nets { flex: 1; min-height: 0; margin: 0 -2.5rem 1.25rem; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start;
+          overflow-y: auto; scrollbar-width: none; border-top: .125rem solid var(--line); }
+.w-nets::-webkit-scrollbar { display: none; }
+.w-net { display: flex; align-items: center; gap: 1.25rem; min-width: 0; min-height: 6rem; padding: 0 1.5rem; text-align: left;
+         border-bottom: .125rem solid var(--line); border-right: .125rem solid var(--line); }
+.w-net:nth-child(2n + 1) { padding-left: 2.5rem; }
+.w-net:nth-child(2n) { border-right: 0; }
+.w-net:active { opacity: .7; }
+.w-net.cur { color: var(--field); background: var(--on); border-color: var(--on); }
+.w-net .name { flex: 1; min-width: 0; font-size: 1.625rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.w-net .meta { flex: none; font-size: 1.125rem; font-weight: 600; }
+.w-net .meta.saved { font-weight: 400; color: var(--on2); }
+.w-empty { grid-column: 1 / -1; padding: 3rem 2.5rem; font-size: 1.375rem; color: var(--on2); }
+.bars { flex: none; display: flex; align-items: flex-end; gap: .2rem; height: 1.5rem; }
+.bars i { width: .375rem; background: var(--line); }
+.bars i:nth-child(1) { height: 25%; } .bars i:nth-child(2) { height: 50%; } .bars i:nth-child(3) { height: 75%; } .bars i:nth-child(4) { height: 100%; }
+.bars i.lit { background: currentColor; }
+.w-lock { flex: none; width: 1.375rem; height: 1.375rem; color: var(--on2); }
+.w-net.cur .w-lock { color: inherit; }
+/* the password form sits at the top: the system keyboard comes up from the bottom */
+.w-form { display: flex; flex-direction: column; gap: 1.25rem; max-width: 56rem; }
+.w-field { display: flex; align-items: center; gap: 1.25rem; height: 5.5rem; border-bottom: .2rem solid var(--line); font-size: 2rem; }
+.w-field[hidden] { display: none; }
+.w-field:focus-within { border-bottom-color: var(--on); }
+.w-field > span { flex: none; width: 7rem; font-size: 1.25rem; color: var(--on2); }
+.w-field input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; color: var(--on); font: inherit; font-weight: 600;
+                 letter-spacing: .03em; caret-color: var(--on); user-select: text; -webkit-user-select: text; }
+.w-field input:focus-visible { outline: 0; }   /* the underline shows the focus */
+.w-field input::placeholder { color: var(--on2); font-size: 1.375rem; font-weight: 400; letter-spacing: 0; }
+.w-eye { flex: none; height: 3.5rem; padding: 0 1.25rem; font-size: 1.25rem; font-weight: 600; border: .125rem solid var(--on2); }
+.w-msg { min-height: 2.25rem; display: flex; align-items: center; gap: .75rem; font-size: 1.375rem; color: var(--on2); }
+.w-msg.bad { color: #b3260a; }
+body.sleeping .w-msg.bad { color: #ff9f88; }
+.w-msg.ok { color: var(--on); font-weight: 600; }
+.w-spin { flex: none; width: 1.5rem; height: 1.5rem; border-radius: 50%; border: .2rem solid var(--line); border-top-color: var(--on); animation: wspin .8s linear infinite; }
+.w-actions { display: flex; flex-wrap: wrap; gap: 1rem; }
 
 /* ---- overlays ---- */
 /* an alarm rings: covers everything (also the settings) until 停止 / 再睡 or the wake word */
@@ -373,6 +438,9 @@ body.sleeping .sheet.on ~ .toast, body.sleeping .sheet.on ~ .hud { color: var(--
   .pane > .upd.new .opt { margin: 0 -3rem; padding: 1.5rem 3rem; }
   .times { gap: 1.25rem; }
   .stepper button { width: 3.75rem; height: 3.75rem; }
+  .bt-chip { max-width: 14rem; }
+  .w-nets { margin: 0 -3rem 1.25rem; grid-template-columns: minmax(0, 1fr); }
+  .w-net, .w-net:nth-child(2n + 1) { padding: 0 3rem; border-right: 0; }
 
   .ring-time { font-size: 18.2rem; }
 
