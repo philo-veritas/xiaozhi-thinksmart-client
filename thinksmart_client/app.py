@@ -63,6 +63,7 @@ SPEECH_RMS = 0.005
 # halted it stays dark with the file systems unmounted, so the cable can be pulled safely
 HALT = ('sudo', '-n', 'systemctl', 'halt')
 HALT_AFTER = 3           # seconds to read "正在关机 … 等 10 秒再拔" before the screen goes dark
+THEMES = ('black', 'warm', 'navy', 'paper')   # the main screen's grounds (web/v2/app.css, DESIGN.md 主题)
 UPDATE_BUSY = ('preparing', 'downloading', 'installing', 'testing', 'rolling_back')
 # installing for a page request, or finishing an interrupted one at boot (self-test, rollback)
 UPDATE_UNITS = ('thinksmart-update-run.service', 'thinksmart-update-boot.service')
@@ -180,6 +181,8 @@ class Events:
 
 
 class Client:
+    theme = 'black'   # the main screen's theme (THEMES), from the user's config
+
     def __init__(self, cfg):
         self.cfg = cfg
         self.events = Events()
@@ -264,6 +267,10 @@ class Client:
             log.warning('invalid screen_off %r, using the default', cfg.get('screen_off'))
             self.screen_off = normalize_screen_off(None)
         self.screen.idle = self._screen_off_seconds()   # written by start()'s release()
+        self.theme = cfg.get('theme')
+        if self.theme not in THEMES:
+            log.warning('invalid theme %r, using black', self.theme)
+            self.theme = 'black'
         self.reports = 0              # pending on the hub
         self.hub_seen = 0.0           # monotonic: last answer from the hub's HTTP side (health check)
         self.keys = Keys(on_step=self.volume_step, on_mic=self._on_mic)
@@ -355,7 +362,7 @@ class Client:
         return {'state': self.state, 'connected': self.hub.connected, 'uploading': self.uploading,
                 'recognising': self.recognising or self.awaiting_text,
                 'mic': self.keys.mic_on, 'sleep': {**self.sleep, 'active': self.sleeping},
-                'brightness': self.brightness(), 'screen_off': self.screen_off,
+                'brightness': self.brightness(), 'screen_off': self.screen_off, 'theme': self.theme,
                 'reports': self.reports, 'volume': self.volume}
 
     def mic_off_toast(self):
@@ -958,6 +965,18 @@ class Client:
         log.info('screen-off: %s', self.screen_off)
         self.set_state(self.state)
         return self.screen_off
+
+    # ---- theme (the page paints it; the client only keeps the choice) ----
+
+    async def set_theme(self, theme):
+        """Page: one of THEMES; raises ValueError."""
+        if theme not in THEMES:
+            raise ValueError(f'theme must be one of {", ".join(THEMES)}')
+        self.theme = theme
+        config.save(theme=theme)
+        log.info('theme: %s', theme)
+        self.set_state(self.state)
+        return self.theme
 
     # ---- reports (the hub's local-only /kiosk/reports endpoint) ----
 

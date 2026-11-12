@@ -85,6 +85,14 @@ def make_app(client: Client):
             return web.json_response({'ok': False, 'error': str(e)}, status=400)
         return web.json_response({'ok': True, 'screen_off': value})
 
+    async def theme(request):
+        body = await request.json()
+        try:
+            value = await client.set_theme(body.get('theme'))
+        except (TypeError, ValueError) as e:
+            return web.json_response({'ok': False, 'error': str(e)}, status=400)
+        return web.json_response({'ok': True, 'theme': value})
+
     async def volume(request):
         body = await request.json()
         try:
@@ -182,6 +190,7 @@ def make_app(client: Client):
     app.router.add_post('/api/sleep', sleep_setting)
     app.router.add_post('/api/brightness', brightness)
     app.router.add_post('/api/screen-off', screen_off)
+    app.router.add_post('/api/theme', theme)
     app.router.add_post('/api/volume', volume)
     app.router.add_post('/api/alarm-volume', alarm_volume)
     app.router.add_post('/api/alarm-tone', alarm_tone)

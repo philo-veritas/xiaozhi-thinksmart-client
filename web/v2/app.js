@@ -1,5 +1,6 @@
 // ThinkSmart voice client page v2: renders what the client streams on /events and sends the buttons back.
-// Same contract as v1. Open with ?demo (or ?demo=<scene>) to preview without a client.
+// Same contract as v1. Open with ?demo (or ?demo=<scene>) to preview without a client; &theme=<black|warm|navy|paper>
+// previews a theme.
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const pad = n => String(n).padStart(2, '0');
@@ -142,14 +143,16 @@ const level = { target: 0, value: 0, phase: 0, raf: 0, last: 0, state: '', key: 
 const isLive = s => s === 'listening' || s === 'speaking';
 function setMe(state, micOff, reports) {
   const key = micOff && state === 'idle' ? 'sleep' : reports && state === 'idle' ? 'notify' : BOT[state] || 'idle';
+  // 小麦's colours come from the page: they change with the state, the theme and the sleep hours
+  const css = getComputedStyle(document.body);
+  const ink = css.getPropertyValue('--me').trim(), paper = css.getPropertyValue('--field').trim();
+  const recoloured = ink !== mainBot.ink || paper !== mainBot.paper;
+  mainBot.ink = ink; mainBot.paper = paper;
   if (key !== level.key) {
     level.key = key;
-    const css = getComputedStyle(document.body);
-    mainBot.ink = css.getPropertyValue('--me').trim();
-    mainBot.paper = css.getPropertyValue('--field').trim();
     mainBot.engine.setState(key, botNow());
-    if (STILL) { botSettled(mainBot); botSettled(ringBot); }
   }
+  if (STILL && (recoloured || key !== level.drawn)) { level.drawn = key; botSettled(mainBot); botSettled(ringBot); }
   if (state === level.state) return;
   level.state = state;
   if (!isLive(state)) level.target = 0;
@@ -200,32 +203,15 @@ function whenSettled(fn) {
   return h;
 }
 
-// A new state: paint the new colour underneath at once and slide the old one up and away. The curtain
-// and the page keep their layers for good (app.css), so a change costs one repaint of the page.
-// The wake comes as two changes 40–50 ms apart (connecting, then listening with the chat page): a change
-// while the curtain still waits makes it wait again, so it slides once, after the heavier of the two.
-// A change while it is already moving lets it finish: the colour underneath is simply the newest one.
-let wipeAnim = null, wipeWait = null;
-function wipe(oldField) {
-  if (STILL || wipeAnim) return;
-  const w = $('wipe');
-  if (wipeWait) wipeWait.cancel();
-  else { w.style.background = oldField; w.style.transform = 'none'; }
-  wipeWait = whenSettled(() => {
-    wipeWait = null;
-    wipeAnim = w.animate([{ transform: 'none' }, { transform: 'translateY(-100%)' }], { duration: 420, easing: 'cubic-bezier(.4, 0, .2, 1)' });
-    wipeAnim.onfinish = wipeAnim.oncancel = () => { w.style.transform = ''; wipeAnim = null; };
-  });
-}
-// The clock page and the chat swap places: the new one rises in as the curtain lifts instead of just being there
+// The clock page and the chat swap places: the new one rises in instead of just being there.
+// (A state change itself moves nothing on the page: the ground stays, 小麦 changes shape and colour.)
 let arriveAnim = null, arriveWait = null;
 function arrive() {
   if (STILL) return;
   const m = $('main');
   if (arriveWait) arriveWait.cancel();
   if (arriveAnim) arriveAnim.cancel();
-  // the starting pose is set now and the rise starts in the same frame as the curtain: started 60 ms
-  // later, it cost the device a slow frame mid-slide (measured 2026-11-09)
+  // the starting pose is set now, the rise starts once the page has caught up (whenSettled)
   m.style.opacity = '0';
   m.style.transform = 'translateY(2.5rem)';
   arriveWait = whenSettled(() => {
@@ -247,10 +233,7 @@ const shownState = () => (ui.ptt ? 'listening' : ui.status.state);
 function renderStatus() {
   const { state, connected } = ui.status;
   const shown = shownState();
-  if (document.body.dataset.state !== shown) {
-    wipe(getComputedStyle(document.body).getPropertyValue('--field').trim());
-    document.body.dataset.state = shown;
-  }
+  document.body.dataset.state = shown;
   const text = {
     idle: ['说<em>「小麦小麦」</em>', connected ? '对话还在，唤醒后可以接着聊' : '或者点麦克风；按住可以直接说'],
     connecting: ['正在连接…', '连上小智网关后就开始听'],
@@ -265,6 +248,7 @@ function renderStatus() {
   const sleeping = !!(ui.status.sleep && ui.status.sleep.active);
   document.body.classList.toggle('has-reports', reports > 0);
   document.body.classList.toggle('sleeping', sleeping);
+  renderLook();   // before 小麦 reads its colours
   $('reportText').textContent = reports > 1 ? `有 ${reports} 条待汇报` : '有一条待汇报';
   if (micOff && shown === 'idle') text.splice(0, 2, '麦克风已关', '拨开机身侧面的开关就能说话');
   else if (reports && shown === 'idle') text[1] = '有待汇报：点右上角收听，或叫一声「小麦小麦」';
@@ -482,6 +466,27 @@ async function sendScreenOff(changes) {
 }
 $('offSwitch').addEventListener('click', () => sendScreenOff({ enabled: !offSetting().enabled }));
 for (const b of $('offMinutes').children) b.addEventListener('click', () => sendScreenOff({ minutes: Number(b.dataset.m) }));
+
+/* ---- settings: the theme (the client keeps the choice, app.css paints it) ---- */
+const LOOKS = { black: '黑', warm: '暖墨', navy: '夜蓝', paper: '纸白' };
+let lookEdit = null;   // a change on its way
+const lookNow = () => lookEdit || (LOOKS[ui.status.theme] ? ui.status.theme : 'black');
+function renderLook() {
+  const look = lookNow();
+  if (look === 'black') delete document.documentElement.dataset.look;
+  else document.documentElement.dataset.look = look;
+  for (const b of $('lookTiles').children) b.classList.toggle('on', b.dataset.look === look);
+  $('lookName').textContent = LOOKS[look];
+}
+async function sendLook(look) {
+  if (DEMO) { ui.status.theme = look; return renderStatus(); }
+  lookEdit = look;
+  renderStatus();
+  await postJson('/api/theme', { theme: look });   // says so itself when it fails; the state event has the saved one
+  if (lookEdit === look) lookEdit = null;
+  renderStatus();
+}
+$('lookTiles').addEventListener('click', e => { const b = e.target.closest('button'); if (b) sendLook(b.dataset.look); });
 
 /* ---- settings: volumes (the device's, which the keys and voice change too, and the alarms' own) ---- */
 // Same finger-following slider as the brightness: at most one change every 150 ms while dragging, the
@@ -1453,7 +1458,7 @@ const demo = DEMO === null ? null : (() => {
   const threads = {};
   const entry = () => ui.models.current.entry;
   const now = () => Date.now() / 1000;
-  const state = (s, connected = true) => handlers.state({ state: s, connected, uploading: s === 'listening' });
+  const state = (s, connected = true) => handlers.state({ state: s, connected, uploading: s === 'listening', theme: ui.status.theme });
   const say = (role, text) => {
     const m = { id: ++seq, role, text, time: now(), entry: entry() };
     (threads[m.entry] = threads[m.entry] || []).push(m);
@@ -1490,7 +1495,8 @@ const demo = DEMO === null ? null : (() => {
   });
   const steps = [
     ['idle', 4000, () => {
-      handlers.snapshot({ status: { state: 'idle', connected: false, uploading: false, volume: 60 }, alarms: alarmsDemo(),
+      handlers.snapshot({ status: { state: 'idle', connected: false, uploading: false, volume: 60,
+                                    theme: new URLSearchParams(location.search).get('theme') || 'black' }, alarms: alarmsDemo(),
                           bluetooth: { available: true, enabled: true, powered: true, window: 0, name: 'ThinkSmart View', direct: false,
                                        devices: [{ address: 'AA:BB:CC:DD:EE:01', name: '小张的 iPhone', paired: true, connected: true, streaming: true,
                                                    title: '晴天', artist: '周杰伦' },

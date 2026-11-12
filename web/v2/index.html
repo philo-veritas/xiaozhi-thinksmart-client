@@ -7,7 +7,6 @@
 <link rel="stylesheet" href="/static/v2/app.css">
 </head>
 <body data-state="idle" class="fresh">
-<div class="wipe" id="wipe"></div>
 <div class="app">
   <header class="top">
     <button class="model-pill" id="modelPill" aria-label="切换模型">
@@ -124,6 +123,16 @@
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
           </div>
           <p class="opt-note" id="brightNote"></p>
+        </div>
+        <div class="bright">
+          <div class="bright-head"><b>主题</b><span class="bright-num" id="lookName"></span></div>
+          <div class="minutes looks" id="lookTiles">
+            <button data-look="black"><i style="--g:#111110"></i>黑</button>
+            <button data-look="warm"><i style="--g:#1a1612"></i>暖墨</button>
+            <button data-look="navy"><i style="--g:#0e1424"></i>夜蓝</button>
+            <button data-look="paper"><i style="--g:#f4f3ee"></i>纸白</button>
+          </div>
+          <p class="opt-note">主屏的底色，换了马上生效。纸白只在白天用，睡眠时段自动换成黑底。</p>
         </div>
         <div class="bright vol">
           <div class="bright-head"><b>设备音量</b><span class="bright-num" id="volNum"></span></div>

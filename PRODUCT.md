@@ -40,7 +40,7 @@ web
 
 ## Evidence on Hand
 
-- 界面演示模式：`/?demo=<idle|settings|ring|connecting|listening|thinking|speaking|chat|cut|models|volume|ptt>`，追加 `&still` 关闭动画，可在没有设备时截图。
+- 界面演示模式：`/?demo=<idle|settings|ring|connecting|listening|thinking|speaking|chat|cut|models|volume|ptt>`，追加 `&still` 关闭动画，追加 `&theme=<black|warm|navy|paper>` 预览主题，可在没有设备时截图。
 - 改版前的状态图：`web/test/orb-face-states.png`。
 
 ## Product Principles

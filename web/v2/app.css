@@ -11,23 +11,33 @@
              unicode-range: U+2026, U+3000-303F, U+4E00-9FFF, U+FF00-FFEF; }
 :root {
   --title: "Xiaomai Title", Archivo, "Noto Sans CJK SC", "Noto Sans SC", "PingFang SC", sans-serif;
-  --black: #111110; --paper: #f4f3ee; --yellow: #ffc800; --cobalt: #2340e8; --red: #f03c14; --wheat: #e8983a;
+  --black: #111110; --paper: #f4f3ee; --yellow: #ffc800; --cobalt: #5a73ff; --red: #f03c14; --wheat: #e8983a;
   --sans: Archivo, "Noto Sans CJK SC", "Noto Sans SC", "PingFang SC", sans-serif;
-  /* what each state paints */
-  --field: var(--black); --on: var(--paper); --on2: #a9a8a2; --line: #ffffff26; --me: var(--wheat); --eye: #fff;
+  /* The ground never changes with the state: 小麦's colour (--me) and shape carry it, and the small live
+     marks (mic ring, wave, dots) take --me too. --raise is the user's bubble, one step above the ground. */
+  --field: var(--black); --on: var(--paper); --on2: #a9a8a2; --line: #ffffff26; --raise: #262523; --me: var(--wheat); --eye: #fff;
 }
 /* 16 px at both shapes of the panel; everything below is in rem, so the page scales as one */
 html { font-size: max(10px, min(2vw, 1.25vh)); }
 @media (orientation: landscape) { html { font-size: max(10px, min(1.25vw, 2vh)); } }
 
-body[data-state="connecting"] { --field: var(--wheat); --on: var(--black); --on2: #3d2706; --line: #11111033; --me: var(--black); }
-body[data-state="listening"]  { --field: var(--paper); --on: var(--black); --on2: #55544f; --line: #11111024; --me: var(--black); }
-body[data-state="thinking"]   { --field: var(--cobalt); --on: var(--paper); --on2: #d6dcff; --line: #ffffff40; --me: var(--wheat); }
-body[data-state="speaking"]   { --field: var(--yellow); --on: var(--black); --on2: #4a3b00; --line: #11111033; --me: var(--black); }
-/* sleep hours: the screen stays black so it doesn't light the room; only 小麦 takes the state's colour */
-body.sleeping[data-state] { --field: var(--black); --on: var(--paper); --on2: #a9a8a2; --line: #ffffff26; --me: var(--wheat); }
-body.sleeping[data-state="listening"] { --me: #5a73ff; }
-body.sleeping[data-state="speaking"]  { --me: #c9a000; }
+body[data-state="listening"] { --me: var(--paper); }
+body[data-state="thinking"]  { --me: var(--cobalt); }
+body[data-state="speaking"]  { --me: var(--yellow); }
+/* themes (settings, DESIGN.md 主题): html[data-look] swaps the ground, the ink and the few colours of
+   小麦 that need it; black is the default and has no attribute. Colours switch at once, no transition. */
+html[data-look="warm"] body { --field: #1a1612; --on: #f3ebe0; --on2: #ab9f90; --line: #f3ebe024; --raise: #2c251e; }
+html[data-look="warm"] body[data-state="listening"] { --me: #f3ebe0; }
+html[data-look="navy"] body { --field: #0e1424; --on: #eef1f8; --on2: #9aa3b8; --line: #eef1f822; --raise: #1d263c; --cobalt: #8593ff; }
+html[data-look="navy"] body[data-state="listening"] { --me: #eef1f8; }
+/* paper is for the day: in sleep hours it is the black theme, so the screen doesn't light the room */
+html[data-look="paper"] body:not(.sleeping) { --field: var(--paper); --on: var(--black); --on2: #55544f; --line: #11111024; --raise: #e3e1d8; }
+html[data-look="paper"] body:not(.sleeping)[data-state="listening"] { --me: var(--black); }
+html[data-look="paper"] body:not(.sleeping)[data-state="thinking"]  { --me: #2340e8; }
+html[data-look="paper"] body:not(.sleeping)[data-state="speaking"]  { --me: #f5b400; }
+/* sleep hours: 小麦 dimmed where its day colour would light the room (after the themes: these win) */
+html body.sleeping[data-state="listening"] { --me: #a9a8a2; }
+html body.sleeping[data-state="speaking"]  { --me: #c9a000; }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overflow: hidden; }
@@ -39,10 +49,8 @@ button:focus-visible, input:focus-visible { outline: .19rem solid var(--on); out
 .tile[src=""], .tile:not([src]) { visibility: hidden; }
 .tile[src*="kimi"] { background: #10142a; }
 
-/* a state change: the old colour slides up off the screen, the new one is already underneath.
-   The curtain waits above the screen and the page and its content keep their layers for good: layers
-   made and dropped at every change cost a full repaint each way and the slide stuttered on the device. */
-.wipe { position: fixed; inset: 0; z-index: 0; transform: translateY(-100%); will-change: transform; }
+/* The page and its content keep their layers for good: layers made and dropped at every change cost a
+   full repaint each way on the device. */
 .app { position: relative; z-index: 1; height: 100%; will-change: transform; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); padding: 0 2.5rem 2.25rem; }
 
 /* ---- top bar ---- */
@@ -107,7 +115,7 @@ body:not(.fresh) .me { width: 14rem; height: 14rem; }
 .mic-slash { display: none; }
 .mic-off .mic { color: var(--on2); background: none; border: .2rem solid var(--on2); }
 .mic-off .mic-slash { display: inline; }
-.mic-ring { position: absolute; inset: -.5rem; border-radius: 50%; border: .25rem solid var(--on); opacity: 0; will-change: transform; }
+.mic-ring { position: absolute; inset: -.5rem; border-radius: 50%; border: .25rem solid var(--me); opacity: 0; will-change: transform; }
 body[data-state="listening"] .mic-ring { opacity: 1; }
 .ctl { flex: 1; min-width: 0; height: 5.5rem; border-radius: 2.75rem; display: flex; align-items: center; justify-content: center; gap: .5rem;
        font-size: 1.625rem; font-weight: 600; border: .2rem solid var(--on); transition: transform .12s; }
@@ -153,25 +161,25 @@ body[data-state="listening"] .mic-ring { opacity: 1; }
 .messages::-webkit-scrollbar { display: none; }
 .messages > :first-child { margin-top: auto; }
 .one-msg .messages > :last-child { margin-bottom: auto; }
-/* Messages have no entrance animation: one comes with a state change, when the curtain and the page
-   already move, and each animated message cost the device a repaint mid-slide. The history can be long:
+/* Messages have no entrance animation: one comes with a state change, when the page may already be
+   rising in, and each animated message cost the device a repaint mid-move. The history can be long:
    messages off screen are not laid out or drawn, or bringing the chat page in stalls the device's screen
-   for 0.2 s (and the curtain's slide with it). */
+   for 0.2 s. */
 .messages > .msg:not(.pending) { content-visibility: auto; contain-intrinsic-height: auto 9rem; }
 .msg.user { align-self: flex-end; max-width: 84%; padding: .875rem 1.375rem; font-size: 1.625rem; line-height: 1.42; font-weight: 500;
-            background: var(--on); color: var(--field); word-break: break-word; white-space: pre-wrap; }
+            background: var(--raise); color: var(--on); border-radius: 1.75rem 1.75rem .5rem 1.75rem; word-break: break-word; white-space: pre-wrap; }
 .msg.bot { max-width: 100%; }
 .msg.bot > .tile { display: none; }
 .body { font-size: 2rem; line-height: 1.46; font-weight: 500; word-break: break-word; white-space: pre-wrap; }
 .ts { display: block; margin-top: .375rem; font-size: 1rem; font-weight: 400; color: var(--on2); }
-.msg.user .ts { color: inherit; opacity: .85; text-align: right; }
-.cut { display: inline-block; margin-left: .625rem; padding: 0 .625rem; border: .125rem solid currentColor; font-size: 1rem; vertical-align: .25rem; line-height: 1.5; }
+.msg.user .ts { text-align: right; }
+.cut { display: inline-block; margin-left: .625rem; padding: 0 .625rem; border: .125rem solid currentColor; border-radius: .5rem; font-size: 1rem; vertical-align: .25rem; line-height: 1.5; }
 /* placeholders while the user talks / the model thinks */
 .pending.user { display: flex; align-items: center; padding: 0; height: 3rem; color: var(--on); background: none; }
 .wave { display: flex; align-items: center; gap: .375rem; height: 3rem; }
-.wave b { width: .5rem; height: 3rem; border-radius: .25rem; background: var(--on); transform: scaleY(.18); will-change: transform; }
+.wave b { width: .5rem; height: 3rem; border-radius: .25rem; background: var(--me); transform: scaleY(.18); will-change: transform; }
 .pending.bot .body { display: flex; align-items: center; gap: .625rem; height: 3rem; }
-.dots i { display: inline-block; width: .75rem; height: .75rem; margin-right: .5rem; border-radius: 50%; background: var(--on); animation: hop 1.1s ease-in-out infinite; }
+.dots i { display: inline-block; width: .75rem; height: .75rem; margin-right: .5rem; border-radius: 50%; background: var(--me); animation: hop 1.1s ease-in-out infinite; }
 .dots i:nth-child(2) { animation-delay: .15s; } .dots i:nth-child(3) { animation-delay: .3s; }
 @keyframes hop { 0%, 60%, 100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-.5rem); opacity: 1; } }
 
@@ -240,6 +248,11 @@ body.sleeping .sheet { --field: var(--black); --on: var(--paper); --on2: #a9a8a2
 .minutes { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin-bottom: .875rem; border-top: .125rem solid var(--line); border-left: .125rem solid var(--line); transition: opacity .2s; }
 .minutes button { height: 4.5rem; font-size: 1.3125rem; font-weight: 500; border-right: .125rem solid var(--line); border-bottom: .125rem solid var(--line); }
 .minutes button.on { color: var(--field); font-weight: 700; background: var(--on); }
+/* the theme: four cells, each a swatch of its ground with 小麦's wheat on it */
+.minutes.looks { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.minutes.looks button { height: auto; padding: 1.125rem 0 1rem; display: flex; flex-direction: column; align-items: center; gap: .625rem; }
+.looks i { position: relative; display: block; width: 4rem; height: 4rem; border-radius: 1rem; background: var(--g); box-shadow: inset 0 0 0 .125rem #8a8a8466; }
+.looks i::after { content: ""; position: absolute; left: 50%; top: 50%; width: 1.75rem; height: 1.75rem; margin: -.875rem 0 0 -.875rem; border-radius: 50%; background: var(--wheat); }
 .tones { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 /* sliders: a finger-sized row, a flat track */
 .bright { display: flex; flex-direction: column; gap: .75rem; padding: 1.5rem 0 .5rem; }
@@ -373,14 +386,14 @@ body.sleeping .w-msg.bad { color: #ff9f88; }
 .power-off.on { display: flex; }
 .power-off b { font-family: var(--title); font-size: 6rem; font-weight: 600; font-synthesis: none; }
 .power-off span { font-size: 1.75rem; }
-.toast { position: fixed; z-index: 30; left: 50%; top: 1.25rem; max-width: 90vw; width: max-content; padding: 1.125rem 1.75rem; font-size: 1.5rem; font-weight: 500; line-height: 1.35;
+.toast { position: fixed; z-index: 30; left: 50%; top: 1.25rem; max-width: 90vw; width: max-content; padding: 1.125rem 1.75rem; border-radius: 1.75rem; font-size: 1.5rem; font-weight: 500; line-height: 1.35;
          color: var(--field); background: var(--on); transform: translate(-50%, -1rem); opacity: 0; pointer-events: none; transition: transform .22s, opacity .22s; }
 .toast.on { transform: translate(-50%, 0); opacity: 1; }
 .sheet.on ~ .toast, .sheet.on ~ .hud { color: var(--paper); background: var(--black); }
 body.sleeping .sheet.on ~ .toast, body.sleeping .sheet.on ~ .hud { color: var(--black); background: var(--paper); }
 .sheet.on ~ .toast { top: auto; bottom: 1.5rem; }
 .toast.error, .sheet.on ~ .toast.error, body.sleeping .sheet.on ~ .toast.error { color: var(--black); background: var(--red); }
-.hud { position: fixed; z-index: 36; left: 50%; top: 50%; width: 30rem; max-width: 90vw; display: flex; align-items: center; gap: 1.25rem; padding: 1.75rem 2rem;
+.hud { position: fixed; z-index: 36; left: 50%; top: 50%; width: 30rem; max-width: 90vw; display: flex; align-items: center; gap: 1.25rem; padding: 1.75rem 2rem; border-radius: 2rem;
        color: var(--field); background: var(--on); transform: translate(-50%, -50%) scale(.94); opacity: 0; pointer-events: none; transition: transform .18s, opacity .18s; }
 .hud.on { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 .hud svg { flex: none; width: 2.25rem; height: 2.25rem; }

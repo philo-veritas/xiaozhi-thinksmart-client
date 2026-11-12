@@ -36,6 +36,7 @@
 - `POST /api/model {"kind": "...", "vendor": "..."}`：切换模型（转给服务端的 `/kiosk/llm/use`）
 - `POST /api/brightness {"level": 0-100}`：屏幕亮度（存用户配置，默认 100，没有自动亮度；睡眠时段内设的亮度用到时段结束）
 - `POST /api/screen-off {"enabled": true, "minutes": 1|3|5|10|30}`：自动熄屏（两个字段可以只传一个；存用户配置，默认开、5 分钟；关掉就不熄屏）
+- `POST /api/theme {"theme": "black"|"warm"|"navy"|"paper"}`：主屏主题（存用户配置，默认 black；随 `state` 事件的 `theme` 字段下发，页面负责上色，纸白在睡眠时段由页面换成黑底）
 - `POST /api/volume {"volume": 0-100}`：设备音量（和音量键、语音同一个值；响铃时改的是响完要恢复的那个）
 - `POST /api/alarm-volume {"volume": 0-100}`：闹钟音量（存用户配置，默认 70）；`POST /api/alarm-tone {"tone": "coffee|morning|bright|hop|marimba", "preview": false}`：选铃声，`preview` 为 true 时用闹钟音量试听一段（前 8 秒），`{"stop": true}` 停止试听（关设置页时页面会发）
 - `POST /api/alarms/delete {"id": n}`、`/api/alarms/stop`、`/api/alarms/snooze`（正在响或 15 分钟内响过的那条 10 分钟后再响）、`/api/alarms/missed/clear`
