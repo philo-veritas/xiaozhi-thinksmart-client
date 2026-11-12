@@ -22,6 +22,7 @@ one suppresses too much of a voice talking over the reply to interrupt it.
 """
 import logging
 import queue
+import sys
 import threading
 import time
 import wave
@@ -219,6 +220,8 @@ class Background:
 
 
 class Audio:
+    has_mic = True   # False: a development computer without a microphone (start())
+
     def __init__(self, on_block):
         self.on_block = on_block          # called on the worker thread: on_block(block, wake_block), 20 ms
         self.player = Player()
@@ -238,11 +241,19 @@ class Audio:
         self.last_in = self.last_out = time.monotonic()
         threading.Thread(target=self._work, name='mic', daemon=True).start()
         self._streams = [
-            sd.InputStream(samplerate=MIC_RATE, channels=1, dtype='float32', blocksize=BLOCK,
-                           latency='high', callback=self._in_cb),
             sd.OutputStream(samplerate=OUT_RATE, channels=2, dtype='float32', blocksize=OUT_BLOCK,
                             latency='high', callback=self._out_cb),
         ]
+        try:
+            self._streams.insert(0, sd.InputStream(samplerate=MIC_RATE, channels=1, dtype='float32',
+                                                   blocksize=BLOCK, latency='high', callback=self._in_cb))
+        except sd.PortAudioError as e:
+            # The device always has its microphone: fail, systemd starts the client again. A development
+            # computer may have none (README: 在电脑上运行): questions can still be typed (/api/text).
+            if sys.platform == 'linux':
+                raise
+            self.has_mic = False
+            log.warning('no microphone (%s): only typed questions', e)
         for s in self._streams:
             s.start()
 
@@ -296,7 +307,7 @@ class Audio:
         now = time.monotonic()
         if not all(s.active for s in self._streams):
             return 'stream stopped'
-        if now - self.last_in > STALL:
+        if self.has_mic and now - self.last_in > STALL:
             return f'no microphone block for {now - self.last_in:.0f} s'
         if now - self.last_out > STALL:
             return f'no speaker callback for {now - self.last_out:.0f} s'

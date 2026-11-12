@@ -8,6 +8,7 @@ import asyncio
 import json
 import logging
 import re
+import sys
 
 log = logging.getLogger(__name__)
 
@@ -148,13 +149,28 @@ async def _wpctl(*args):
     return out.decode()
 
 
+async def _osascript(script):
+    p = await asyncio.create_subprocess_exec('osascript', '-e', script, stdout=asyncio.subprocess.PIPE,
+                                             stderr=asyncio.subprocess.DEVNULL)
+    out, _ = await p.communicate()
+    return out.decode()
+
+
+# The device: PipeWire's default sink. A Mac (a development run, README: 在电脑上运行): its output volume.
 async def get_volume():
+    if sys.platform == 'darwin':
+        m = re.search(r'(\d+)', await _osascript('output volume of (get volume settings)'))
+        return int(m.group(1)) if m else None
     m = re.search(r'([\d.]+)', await _wpctl('get-volume', '@DEFAULT_AUDIO_SINK@'))
     return round(float(m.group(1)) * 100) if m else None
 
 
 async def set_volume(volume):
-    await _wpctl('set-volume', '@DEFAULT_AUDIO_SINK@', f'{max(0, min(100, int(volume))) / 100:.2f}')
+    volume = max(0, min(100, int(volume)))
+    if sys.platform == 'darwin':
+        await _osascript(f'set volume output volume {volume}')
+    else:
+        await _wpctl('set-volume', '@DEFAULT_AUDIO_SINK@', f'{volume / 100:.2f}')
 
 
 def _dumps(value):

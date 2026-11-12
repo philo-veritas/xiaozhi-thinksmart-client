@@ -4,7 +4,19 @@ import ctypes.util
 
 import numpy as np
 
-_lib = ctypes.CDLL(ctypes.util.find_library('opus') or 'libopus.so.0')
+def _load():
+    # the device: libopus.so.0; a Mac: Homebrew's, which find_library doesn't see from uv's Python
+    for name in (ctypes.util.find_library('opus'), 'libopus.so.0', '/opt/homebrew/lib/libopus.dylib',
+                 '/usr/local/lib/libopus.dylib'):
+        if name:
+            try:
+                return ctypes.CDLL(name)
+            except OSError:
+                pass
+    raise OSError('libopus not found')
+
+
+_lib = _load()
 _lib.opus_encoder_create.restype = ctypes.c_void_p
 _lib.opus_encoder_create.argtypes = [ctypes.c_int32, ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int)]
 _lib.opus_encode.restype = ctypes.c_int32

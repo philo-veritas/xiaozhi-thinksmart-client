@@ -23,6 +23,7 @@ import json
 import logging
 import pathlib
 import shutil
+import sys
 import time
 
 import numpy as np
@@ -79,6 +80,10 @@ class Bluetooth:
     # ---- the helper ----
 
     async def start(self):
+        # BlueZ and PipeWire: Linux only (a Mac has /usr/bin/python3 too, the helper would die in a loop)
+        if sys.platform != 'linux':
+            log.info('bluetooth: not on Linux, no speaker mode')
+            return
         if not shutil.which(SYSTEM_PYTHON) or not HELPER.exists():
             log.warning('bluetooth: no %s, no speaker mode', SYSTEM_PYTHON)
             return

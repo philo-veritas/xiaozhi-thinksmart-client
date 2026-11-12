@@ -28,6 +28,30 @@
 | `deploy/thinksmart-client.service` | 系统服务 |
 | `deploy/bootstrap-updater` | 服务启动前以 root 运行：20261101 镜像的设备上更新服务只认客户端，发布包里带了新的（`deploy/updater/`，发布时由系统镜像仓库的 `make-release.py --system` 放进去），比设备上的新就换上；已经是新的就什么都不做 |
 
+## 在电脑上运行（开发调试）
+
+不在设备旁时，可以在 Mac 上运行同一份客户端，用电脑的麦克风和扬声器，浏览器打开 `http://127.0.0.1:8090` 就是设备上的界面。对话状态机、唤醒词、网关协议和页面都是设备上那份代码。
+
+```bash
+brew install opus speexdsp
+uv venv --python 3.12 .venv
+uv pip install --python .venv/bin/python -r requirements.lock
+.venv/bin/python -m thinksmart_client
+```
+
+网关地址默认是本机的 `16688`、`16689` 端口，电脑上运行着 xiaozhi-hub-server 时不用配置。要连别的网关，在 `~/.config/thinksmart-client/config.json` 里写 `hub_ws` 和 `hub_http`；环境变量 `THINKSMART_CONFIG` 可以换一个配置文件，每个文件有自己的设备标识。
+
+和设备不一样的地方：
+
+| 项目 | 电脑上 |
+| --- | --- |
+| 回声消除 | 没有 WebRTC APM（库只编了设备的），上传的是 Speex 线性消除后的声音；没装 `speexdsp` 时不消除。外放时回复容易被自己听到，调试请戴耳机 |
+| 麦克风 | 第一次运行时 macOS 会问终端要麦克风权限。电脑没有麦克风时照常启动，只能点页面上的示例问题，或用 `POST /api/text` 发文字提问（`curl -X POST 127.0.0.1:8090/api/text -H 'content-type: application/json' -d '{"text": "现在几点"}'`） |
+| 音量 | 改的是 macOS 的输出音量；闹钟响时同样会临时调到闹钟音量 |
+| 屏幕、音量键、麦克风开关、蓝牙音箱、关机、软件更新 | 没有，相应的设置不起作用 |
+
+打断的灵敏度、远场唤醒率、PipeWire 相关的故障和性能，只在设备上才有参考价值。
+
 ## 接口（只监听本机）
 
 - `GET /events`：事件流，`snapshot`、`state`、`message`、`thread`、`model`、`level`、`toast`、`volume`（`source`：`key`/`voice`/`page`；`ring` 为 true 是响铃时音量键调的这一次铃声）、`alarms`（列表、错过的、是否对过时、正在响的、闹钟音量和铃声）、`bluetooth`（见 `/api/bluetooth`）

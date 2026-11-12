@@ -17,7 +17,11 @@ import numpy as np
 import soxr
 
 from . import webrtc_apm
-from .speex_aec import LinearAec
+
+try:
+    from .speex_aec import LinearAec
+except OSError:   # no libspeexdsp (a development computer without it)
+    LinearAec = None
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +39,7 @@ class Aec:
         self._far_pending = deque()
         self._far_buffer = np.empty(0, dtype=np.float32)
         self._rate = near_rate
-        self._linear = LinearAec(near_rate, 320, tail_ms=500)
+        self._linear = LinearAec and LinearAec(near_rate, 320, tail_ms=500)
         self._linear_far = np.empty(0, dtype=np.float32)
         self.linear = None   # the last block through the linear canceller
         self._resampler = soxr.ResampleStream(far_rate, near_rate, 1, dtype='float32', quality='QQ')
@@ -44,7 +48,16 @@ class Aec:
         self._far_in = (ctypes.c_short * self._frame)()
         self._far_out = (ctypes.c_short * self._frame)()
 
-        self._apm = webrtc_apm.WebRTCAudioProcessing()
+        # The library is built for the device only. On a development computer (README: 在电脑上运行)
+        # what is uploaded is the linear canceller's output, or the microphone as it is without
+        # libspeexdsp: use headphones then.
+        try:
+            self._apm = webrtc_apm.WebRTCAudioProcessing()
+        except OSError as e:
+            self._apm = None
+            log.warning('no WebRTC APM (%s): echo cancellation is %s', e,
+                        'linear only' if self._linear else 'off, use headphones')
+            return
         config = webrtc_apm.create_default_config()
         config.echo.enabled = True
         config.echo.mobile_mode = False
@@ -72,6 +85,8 @@ class Aec:
         """block: 16 kHz mono float32, a multiple of 10 ms. Returns the echo-cancelled block."""
         self._drain_far()
         self.linear = self._process_linear(block)
+        if not self._apm:
+            return self.linear
         i16 = _to_i16(block)
         out = np.empty(len(block), dtype=np.float32)
         self._apm.set_stream_delay_ms(self._delay_ms)
@@ -83,6 +98,9 @@ class Aec:
         return out
 
     def _process_linear(self, block):
+        if not self._linear:
+            self._linear_far = self._linear_far[:0]
+            return block
         far = self._linear_far
         ahead = int(_LINEAR_AHEAD_MAX * self._rate)
         if len(far) > ahead + len(block):
@@ -102,6 +120,9 @@ class Aec:
             if len(res):
                 self._far_buffer = np.concatenate((self._far_buffer, res))
                 self._linear_far = np.concatenate((self._linear_far, res))
+        if not self._apm:
+            self._far_buffer = self._far_buffer[:0]
+            return
         usable = len(self._far_buffer) // self._frame * self._frame
         if not usable:
             return

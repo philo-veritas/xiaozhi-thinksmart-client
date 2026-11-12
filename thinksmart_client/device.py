@@ -12,12 +12,16 @@ import json
 import logging
 import os
 import struct
+import sys
+import tempfile
 import time
 from pathlib import Path
 
 log = logging.getLogger(__name__)
 
-HINT_PATH = Path(os.environ.get('XDG_RUNTIME_DIR', '/run/user/1000')) / 'thinksmart-screen.json'
+# off the device (a development run, README: 在电脑上运行) nothing reads it: it goes to the temporary directory
+HINT_PATH = Path(os.environ.get('XDG_RUNTIME_DIR')
+                 or ('/run/user/1000' if sys.platform == 'linux' else tempfile.gettempdir())) / 'thinksmart-screen.json'
 SCREEN_OFF_MINUTES = (1, 3, 5, 10, 30)   # the settings page's choices; 5 by default (config.py)
 # the blanker's MANUAL_MIN (0%), MAX_BRIGHTNESS (100%) and DIM_BRIGHTNESS (sleep hours) on the 0-100 scale
 DIM_LEVEL = round((1600 - 1400) * 100 / (4095 - 1400))

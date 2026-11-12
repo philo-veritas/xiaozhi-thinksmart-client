@@ -4,12 +4,15 @@ The file holds only what belongs to this device or its user (ids, settings chang
 by voice), never copies of the defaults, so a client update can change a default."""
 import json
 import logging
+import os
 import pathlib
 import uuid
 
 log = logging.getLogger(__name__)
 
-PATH = pathlib.Path.home() / '.config' / 'thinksmart-client' / 'config.json'
+# THINKSMART_CONFIG: another file, for a development run next to the real one (README: 在电脑上运行)
+PATH = pathlib.Path(os.environ.get('THINKSMART_CONFIG')
+                    or pathlib.Path.home() / '.config' / 'thinksmart-client' / 'config.json')
 
 DEFAULTS = {
     'hub_ws': 'ws://127.0.0.1:16689/xiaozhi/v1/',
